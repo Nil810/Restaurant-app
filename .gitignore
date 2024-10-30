@@ -1,4 +1,5 @@
 node_modules
-GelLocation.jsx
+./src/clover/GelLocation.jsx
+./src/Components/GelLocation.jsx
 package-lock.json
 package.json
