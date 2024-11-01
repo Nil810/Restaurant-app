@@ -1,5 +1,44 @@
-node_modules
-./src/clover/GelLocation.jsx
-./src/Components/GelLocation.jsx
-package-lock.json
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 package.json
+package-lock.json
+
+
+# testing
+/coverage
+
+# production
+/build
+
+# environment variables and api keys
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+src/config/googleApiConfig.js
+
+# Geolocation files
+**/GetLocation.jsx
+**/geolocation.js
+**/location-services.js
+**/map-config.js
+
+# logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE specific files
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
