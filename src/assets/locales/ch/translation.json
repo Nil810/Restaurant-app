@@ -66,5 +66,8 @@
     "total_ammount": "Gesamtbetrag",
     "todays_report": "Heutiger Bericht",
     "todays_summary": "Heutige Zusammenfassung",
-    "pay_mode":"Wählen Sie Zahlungsmodus"
+    "pay_mode":"Wählen Sie Zahlungsmodus",
+    "manage_tables":"Tabellen verwalten",
+    "status_view":"Statusansicht",
+    "detail_view" : "Detailansicht"
 }

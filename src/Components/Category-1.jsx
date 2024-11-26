@@ -17,15 +17,24 @@ import Gallery from "./Gallery";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import CloseIcon from "@mui/icons-material/Close";
+import List from "@mui/material/List"; // Import List
+import ListItem from "@mui/material/ListItem"; // Import ListItem
+import Typography from "@mui/material/Typography"; // Import Typography
 
 //Added by Mojahid
 import DragHandleIcon from "@mui/icons-material/DragHandle";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 
 function Category(props) {
+  const [categories, setCategories] = useState([]);
+  const [products, setProducts] = useState([]);
+
+  const [filteredProducts, setFilteredProducts] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [catgory, setCategory] = useState("Nothing");
   const [foodName, setFoodName] = useState("");
   const [imageURL, setImageURL] = useState("");
-  const [categories, setCategories] = useState([]);
   const [selectedOption, setSelectedOption] = useState("");
   const [userInfo, setUserInfo] = useState([]);
   const [filterCat, setFilterCat] = useState([]);
@@ -38,14 +47,14 @@ function Category(props) {
   const [addOn, setAddOn] = useState(false);
   const [noAddOn, setNoAddOn] = useState(1);
   const [minNoAddOn, setMinNoAddOn] = useState(0);
-   const [hasError, setHasError] = useState("");
+  const [hasError, setHasError] = useState("");
   const [catIndex, setCatIndex] = useState(1);
   const [showGallery, setShowGallery] = useState(false);
   const [image, setImage] = useState(false);
-  const [orderableAlone, setOrderableAlone]= useState(true);
+  const [orderableAlone, setOrderableAlone] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   Array.prototype.move = function (from, to) {
-  this.splice(to, 0, this.splice(from, 1)[0]);
+    this.splice(to, 0, this.splice(from, 1)[0]);
   };
   let baseURL = configs.baseURL;
   let userData = sessionStorage.getItem("userData")
@@ -63,15 +72,16 @@ function Category(props) {
   useEffect(() => {
     fetchCatData();
   }, []);
+
   const handleSelectedImage = (image) => {
     setSelectedImage(image);
   };
   const handleFoodNameChange = (event) => {
     setFoodName(event.target.value);
   };
-  const handleOderableCheck = (event) =>{
+  const handleOderableCheck = (event) => {
     setOrderableAlone(!orderableAlone);
-  }
+  };
 
   const handleImageURLChange = (e) => {
     var formData = new FormData();
@@ -92,7 +102,7 @@ function Category(props) {
     if (!foodName) {
       setHasError("Category Name is required");
       return;
-    }else if(noAddOn< minNoAddOn){
+    } else if (noAddOn < minNoAddOn) {
       setHasError("Max limit can't be more than min. limit");
       return;
     } else if (catId) {
@@ -101,14 +111,14 @@ function Category(props) {
           baseURL + "/api/categories/" + catId + `?merchantCode=${merchCode}`,
           {
             name: foodName,
-            image: imageURL ? imageURL : selectedImage.image,
+            image: selectedImage ? selectedImage.image : (imageURL || ''),
             tags: tags.length ? tags.join("~") : "",
             isAddOn: addOn,
             serialNumber: catIndex ? catIndex : 1,
             maxAddOnAllowed: parseInt(noAddOn),
             minAddOnAllowed: parseInt(minNoAddOn),
             userId: userData.sub,
-            isOrderableAlone:orderableAlone
+            isOrderableAlone: orderableAlone,
           }
         )
         .then((response) => {
@@ -118,13 +128,13 @@ function Category(props) {
       axios
         .post(`${baseURL}/api/categories?merchantCode=${merchCode}`, {
           name: foodName,
-          image: imageURL ? imageURL : selectedImage.image,
+          image: selectedImage ? selectedImage.image : (imageURL || ''),
           tags: tags.length ? tags.join("~") : "",
           isAddOn: addOn,
           serialNumber: catIndex ? catIndex : 1,
           maxAddOnAllowed: parseInt(noAddOn),
           minAddOnAllowed: parseInt(minNoAddOn),
-          isOrderableAlone:orderableAlone,
+          isOrderableAlone: orderableAlone,
           userId: userData.sub,
         })
         .then((response) => {
@@ -135,7 +145,7 @@ function Category(props) {
   };
 
   const handleDelete = (id) => {
-    console.log(id);
+    // console.log(id);
     axios.delete(baseURL + "/api/categories/" + id).then((response) => {
       fetchCatData();
     });
@@ -143,7 +153,7 @@ function Category(props) {
 
   const fetchCatData = () => {
     axios.get(getCatByUserUrl).then((response) => {
-      console.log("responseData", response.data);
+      //  console.log("responseData", response.data);
       setCategories(response.data);
       setDialogOpen(false);
       setAddOn(false);
@@ -170,8 +180,8 @@ function Category(props) {
   const handleInputChange = (e) => {
     var formData = new FormData();
     let file = e.target.files[0];
-    console.log(e.target);
-    console.log(file);
+    // console.log(e.target);
+    // console.log(file);
     let fileName = "pro_" + new Date().getTime() + file.name;
 
     formData.append("uploader", file, fileName);
@@ -198,7 +208,7 @@ function Category(props) {
     let fltData = categories.filter(
       (cat) => cat.name.toLowerCase().indexOf(val.toLowerCase()) !== -1
     );
-    console.log(fltData);
+    //console.log(fltData);
     setFilterCat(fltData);
     setIsSearch(val ? true : false);
   };
@@ -206,8 +216,42 @@ function Category(props) {
     setSearchQuery(event.target.value);
   };
 
+  // Added by sk
+  const handleShow = (cat) => {
+    console.log("Selected Category:", cat);
+
+    axios
+      .get(`${baseURL}/api/products?merchantCode=${merchCode}`)
+      .then((response) => {
+        const fetchedProducts = response.data;
+        setProducts(fetchedProducts);
+
+        fetchedProducts.forEach((product) => {
+          console.log("Product Category:", product.category);
+          console.log("Product Name:", product.name);
+          console.log("Selected Category ID:", cat.id);
+        });
+        const filtered = fetchedProducts.filter((product) => {
+          // Compare product.category directly with cat.id since category is a string ID
+          return product.category === cat.id;
+        });
+        console.log("Filtered Products:", filtered); // Check the filtered products
+        setFilteredProducts(filtered); // Set filtered products
+        setCategory(cat.name);
+        setShowPopup(true); // Show popup with filtered products
+      })
+      .catch((error) => {
+        console.error("Error fetching products:", error);
+      });
+  };
+
+  // Close popup handler
+  const handleClosePopup = () => {
+    setShowPopup(false);
+  };
+
   const handleEdit = (cat) => {
-    console.log(cat);
+    // console.log(cat);
     setAddOn(cat.isAddOn);
     setTags(cat.tags.split("~"));
     setFoodName(cat.name);
@@ -229,7 +273,7 @@ function Category(props) {
   };
   const handleSubmitImage = () => {
     if (selectedImage) {
-      console.log("Selected Image:", selectedImage);
+      // console.log("Selected Image:", selectedImage);
     } else {
       console.error("No image selected!");
     }
@@ -238,21 +282,20 @@ function Category(props) {
 
   // ADDED by  MOJAHID ************************************
   const handleDragEnd = (results) => {
-    console.log(results);
+    //console.log(results);
     if (!results.destination) {
       return;
     }
     let Cats = [...categories];
     //arr.move(from, to)
-    Cats.move(results.source.index,results.destination.index)
-    console.log("new TEMPUSER", Cats);
-    const reorderCatIds = Cats.map(cat => cat.id);
+    Cats.move(results.source.index, results.destination.index);
+    //console.log("new TEMPUSER", Cats);
+    const reorderCatIds = Cats.map((cat) => cat.id);
     updateDragAndDrop(reorderCatIds, Cats);
   };
 
-  const updateDragAndDrop = async (reorderCatIds,Cats) => {
+  const updateDragAndDrop = async (reorderCatIds, Cats) => {
     try {
-
       axios
         .put(
           baseURL + "/api/categories/update_by_prop?propName=serialNumber",
@@ -263,7 +306,7 @@ function Category(props) {
           setCategories(Cats);
         });
     } catch (err) {
-      console.log("Error from frag n drop URL ", err);
+      //console.log("Error from frag n drop URL ", err);
     }
   };
 
@@ -292,7 +335,7 @@ function Category(props) {
             color: (theme) => theme.palette.grey[500],
           }}
         >
-        <CloseIcon />
+          <CloseIcon />
         </IconButton>
         <DialogContent
           style={{
@@ -320,16 +363,14 @@ function Category(props) {
               value={foodName}
               onChange={handleFoodNameChange}
             />
-
-            
-
           </div>
 
-
-        <div style={{
+          <div
+            style={{
               display: "flex",
               marginTop: "20px",
-            }}>
+            }}
+          >
             <span>Can Be Ordered Alone?:</span>
             <input
               type="checkbox"
@@ -343,7 +384,7 @@ function Category(props) {
               checked={orderableAlone}
               onChange={handleOderableCheck}
             />
-            </div>
+          </div>
 
           <div
             style={{
@@ -405,15 +446,16 @@ function Category(props) {
                 type="number"
                 placeholder="Min. allowed limit"
                 size="small"
-                value={ minNoAddOn}
-                 InputProps={{
-                  inputProps: { 
-                      max: 100, min: 0 
-                  }
-              }}
+                value={minNoAddOn}
+                InputProps={{
+                  inputProps: {
+                    max: 100,
+                    min: 0,
+                  },
+                }}
                 label="Min. Order:"
                 variant="outlined"
-                onChange={(e) =>setMinNoAddOn(e.target.value)}
+                onChange={(e) => setMinNoAddOn(e.target.value)}
               />
             )}
             {addOn && (
@@ -422,12 +464,13 @@ function Category(props) {
                 placeholder="Max. allowed limit"
                 size="small"
                 value={noAddOn}
-                style={{marginLeft:"10px"}}
+                style={{ marginLeft: "10px" }}
                 InputProps={{
-                  inputProps: { 
-                      max: 100, min: 0 
-                  }
-              }}
+                  inputProps: {
+                    max: 100,
+                    min: 0,
+                  },
+                }}
                 label="Max. Order:"
                 variant="outlined"
                 onChange={(e) => setNoAddOn(e.target.value)}
@@ -461,9 +504,12 @@ function Category(props) {
                 }
                 placeholder="Press enter to add tags"
               />
-              
             </div>
-            {hasError?<span style={{color:'red'}}>{"* "+hasError}</span>:""}
+            {hasError ? (
+              <span style={{ color: "red" }}>{"* " + hasError}</span>
+            ) : (
+              ""
+            )}
           </div>
         </DialogContent>
         <DialogActions>
@@ -494,6 +540,7 @@ function Category(props) {
           </Button>
         </DialogActions>
       </Dialog>
+
       <Dialog
         onClose={() => setShowGallery(false)}
         open={showGallery}
@@ -603,8 +650,10 @@ function Category(props) {
             <Thead>
               <Tr>
                 <Th style={{ width: "25%" }}>Categories</Th>
-                <Th style={{ width: "25%" }}>Images</Th>
-                <Th style={{ width: "25%" }}>Tags</Th>
+                <Th style={{ width: "10%" }}>Images</Th>
+                <Th style={{ width: "20%" }}>Tags</Th>
+                <Th style={{ width: "35%" }}>Actions</Th>
+                <Th style={{ width: "10%" }}>Rearrange</Th>
                 <Th>
                   {" "}
                   {userInfo.length && userInfo[0].activeProviderId === "" ? (
@@ -632,7 +681,7 @@ function Category(props) {
                               ref={provided.innerRef}
                               {...provided.draggableProps}
                             >
-                              <td style={{ fontWeight: "bold" }} align="start">
+                              <td style={{ fontWeight: "bold",width: "25%" }} align="start">
                                 {category.name}
                                 {category.isAddOn ? (
                                   <span
@@ -648,7 +697,7 @@ function Category(props) {
                                   ""
                                 )}
                               </td>
-                              <Td>
+                              <Td style={{width: "10%"}}>
                                 <img
                                   alt="cat"
                                   src={
@@ -665,13 +714,43 @@ function Category(props) {
                                 />
                               </Td>
 
-                              <Td style={{ width: "25%" }}>{category.tags}</Td>
+                              <Td style={{width: "20%"}}>{category.tags}</Td>
                               {!merchCode.activeProviderId ? (
-                                <Td>
+                                <Td
+                                  style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    width: "35%"
+                                  }}
+                                >
+                                  <Button
+                                    aria-label="show"
+                                    size="small"
+                                    variant="outlined"
+                             
+                                    onClick={() => handleShow(category)}
+                                    style={{
+                                      fontWeight: "bold",
+                                      textTransform: "none",
+                                      borderRadius: "4px",
+                                      padding: "6px 5px",
+                                      boxShadow: "none", // No shadow for a flat design, adjust if needed
+                                      display: "block", // Ensures the button is always displayed
+                                      whiteSpace: "nowrap", // Prevents text wrapping
+                                      textOverflow: "ellipsis", // Adds an ellipsis if the text is too long to fit
+                                      width: "100px", // Adjusts width to content, ensure enough space in container
+                                      minWidth:"100px"
+                                    
+                                    }}
+                                  >
+                                    Show Items
+                                  </Button>
+
                                   <IconButton
                                     aria-label="edit"
                                     size="large"
                                     color="info"
+                                    style={{marginLeft:"10px"}}
                                     onClick={() => handleEdit(category)}
                                   >
                                     <EditIcon />
@@ -679,6 +758,7 @@ function Category(props) {
                                   <IconButton
                                     aria-label="delete"
                                     size="large"
+                                     style={{marginLeft:"10px"}}
                                     color="error"
                                     onClick={() => handleDelete(category.id)}
                                   >
@@ -704,6 +784,58 @@ function Category(props) {
           </Table>
         </DragDropContext>
       </div>
+
+      {/* Dialog Popup to show filtered products */}
+      <Dialog
+        open={showPopup}
+        onClose={handleClosePopup}
+        fullWidth
+        maxWidth="md"
+      >
+        <DialogTitle>
+          Items in Category <b>{catgory}</b>{" "}
+        </DialogTitle>
+        <DialogContent>
+          {filteredProducts.length > 0 ? (
+            <List>
+              {filteredProducts.map((product) => (
+                <ListItem
+                  key={product.id}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "flex-start",
+                    marginBottom: "10px",
+                    padding: "10px",
+                    border: "1px solid #ddd",
+                    borderRadius: "5px",
+                  }}
+                >
+                  <Typography variant="h6" gutterBottom>
+                    {product.name}
+                  </Typography>
+                  <Typography variant="body1">
+                    Price: {product.price} | In Stock:{" "}
+                    {product.inStock ? "Yes" : "No"}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {product.description}
+                  </Typography>
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body1">
+              No products found for this category.
+            </Typography>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClosePopup} color="primary">
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
     </div>
   );
 }

@@ -106,11 +106,11 @@ const Customers = () => {
         });
     }
   };
-  const filterProducts = (e) => {
+  const filterCustomers = (e) => {
     console.log(customerData)
     let val = e.target.value;
     let fltData = customerData.filter(
-      (pro) => pro.firstName.toLowerCase().indexOf(val.toLowerCase()) !== -1
+      (pro) => (pro.firstName.toLowerCase().indexOf(val.toLowerCase()) !== -1 || pro.phone.indexOf(val.toLowerCase()) !== -1 || pro.email.indexOf(val.toLowerCase()) !== -1 || pro.address.indexOf(val.toLowerCase()) !== -1)
     );
     setFilterPro(fltData);
     setIsSearch(val ? true : false);
@@ -141,8 +141,8 @@ const Customers = () => {
           <SearchIcon />
           <input
             type="text"
-          onChange={filterProducts}
-            placeholder="Enter Name"
+          onChange={filterCustomers}
+            placeholder="Enter Customer Details"
             style={{
               border: "none",
               outline: "none",
@@ -227,7 +227,7 @@ const Customers = () => {
           />
         )}
       </div>
-      <Dialog open={edit} maxWidth="lg" fullWidth={true}>
+      <Dialog open={edit} maxWidth="md" >
         <div className="dialogTitle">
           <DialogTitle style={{ textAlign: "center", fontWeight: "bold" }}>
             {"Edit Customer Data"}
@@ -244,7 +244,7 @@ const Customers = () => {
               }}
             >
               <div className="row">
-                <div className="col">
+                <div >
                   <Box
                     sx={{
                       width: 500,
@@ -263,10 +263,10 @@ const Customers = () => {
                   </Box>
                 </div>
 
-                <div className="col">
+                <div>
                   <Box
                     sx={{
-                      width: 500,
+                      width:300,
                       maxWidth: "100%",
                     }}
                     noValidate
@@ -287,7 +287,7 @@ const Customers = () => {
                 </div>
               </div>{" "}
               <div className="row">
-                <div className="col">
+                <div >
                   <Box
                     sx={{
                       width: 500,
@@ -306,7 +306,7 @@ const Customers = () => {
                   </Box>
                 </div>
 
-                <div className="col">
+                <div>
                   <Box
                     sx={{
                       width: 500,
@@ -335,13 +335,13 @@ const Customers = () => {
                 className="save-btn"
                 variant="contained"
                 color="success"
-                style={{ margin: "20px" }}
+                style={{ margin: "20px",background: "#f7c919" }}
                 onClick={handleSubmit}
               >
                 Save
               </Button>
               <Button
-                variant="contained"
+                variant="outlined"
                 color="error"
                 style={{ margin: "20px" }}
                 className="close-btn"

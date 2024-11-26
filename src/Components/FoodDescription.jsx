@@ -71,6 +71,7 @@ function FoodDescription() {
     setSelectedImage(image);
   };
   const handleGallery = () => {
+    setSearchQuery(foodName);
     setShowGallery(true);
   };
 
@@ -713,7 +714,7 @@ function FoodDescription() {
                           <Button variant="contained" onClick={handleGallery}>
                             Add From Gallery
                           </Button>
-                          <Button variant="contained" onClick={handleUpload}>
+                          <Button variant="outlined" onClick={handleUpload}>
                             Upload New
                           </Button>
                         </div>
@@ -1043,7 +1044,7 @@ function FoodDescription() {
 
                 <div className="fixed-buttons">
                   <Button
-                    className="save-btn"
+                    className="save-btn btnDialog-Fill"
                     variant="contained"
                     color="success"
                     style={{ margin: "20px" }}
@@ -1052,7 +1053,7 @@ function FoodDescription() {
                     Save
                   </Button>
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="error"
                     style={{ margin: "20px" }}
                     className="close-btn"
@@ -1086,6 +1087,7 @@ function FoodDescription() {
                 top: "0",
                 backgroundColor: "#fff",
                 zIndex: "1",
+                justifyContent:"space-evenly"
               }}
             >
               <div
@@ -1095,7 +1097,7 @@ function FoodDescription() {
                 <SearchIcon />
                 <input
                   type="text"
-                  placeholder="Search Images"
+                  placeholder="Search item image"
                   onChange={handleSearch}
                   style={{
                     border: "none",
@@ -1104,9 +1106,23 @@ function FoodDescription() {
                     backgroundColor: "transparent",
                     marginLeft: "8px",
                   }}
-                  value={foodName || searchQuery}
+                  value={searchQuery}
                 />
               </div>
+              <input 
+              type="button"
+              value="Search"
+              style={{
+                border:"1px solid black",
+                borderRadius:"15px",
+                marginLeft:"5px",
+                padding:"5px 15px",
+                cursor:"pointer",
+                backgroundColor:"#000",
+                color:"#fff"
+              }}
+              // onClick={}
+              />
             </div>
 
             <div
@@ -1135,8 +1151,8 @@ function FoodDescription() {
               }}
             >
               <Button
-                style={{ background: "red" }}
-                variant="contained"
+                variant="outlined"
+                color="warning"
                 onClick={() => setShowGallery(false)}
               >
                 Cancel
@@ -1146,7 +1162,7 @@ function FoodDescription() {
                 variant="contained"
                 onClick={handleSubmitImage}
               >
-                Submit
+                SELECT
               </Button>
             </div>
           </div>

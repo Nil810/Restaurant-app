@@ -838,9 +838,12 @@ const OrderList = (props) => {
                                 orderLists.orderSource === "EPOS"
                                   ? "info"
                                   : orderLists.orderSource === "Self Order"
-                                  ? "primary"
+                                  ? "warning"
                                   : orderLists.orderSource === "Table Order"
                                   ? "secondary"
+                                  :
+                                  orderLists.orderSource === "Online Order"
+                                  ? "error"
                                   : "default"
                               }
                               style={{
@@ -1253,7 +1256,7 @@ const OrderList = (props) => {
      <Dialog open={payModeSelectDialog} maxWidth="xs" className="pd-2" onClose={() => setPayModeSelectDialog(false)} >
       <DialogTitle className="text-center  fw-bold"> {t({ id: "pay_mode" })}</DialogTitle>
       <div style={{padding:"20px"}}>
-      <PaymentOptions handlePaymentClick={setPayModeSelectDialog} handlePayMode={handlePayment} paymentIndex={payModeIndx} order={selectedOrder}/>
+      <PaymentOptions handlePaymentClick={setPayModeSelectDialog} handlePayMode={handlePayment} paymentIndex={payModeIndx} order={selectedOrder} closeParentDialog={()=>setPayModeSelectDialog(false)}/>
       </div>
      </Dialog>
     </div>

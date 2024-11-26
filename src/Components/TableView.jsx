@@ -10,20 +10,27 @@ import DownloadIcon from "@mui/icons-material/Download";
 import Button from "@mui/material/Button";
 import AddIcon from "@mui/icons-material/Add";
 import QRCode from "react-qr-code";
-import TableBarIcon from '@mui/icons-material/TableBar';
-import RestaurantMenuIcon from '@mui/icons-material/RestaurantMenu';
+import TableBarIcon from "@mui/icons-material/TableBar";
+import RestaurantMenuIcon from "@mui/icons-material/RestaurantMenu";
+import ButtonGroup from "@mui/material/ButtonGroup";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
-
+import MediaCard from "./CardView";
 import FormGroup from "@mui/material/FormGroup";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import Switch from "@mui/material/Switch";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import ViewModuleIcon from "@mui/icons-material/ViewModule";
+import { useIntl } from "react-intl";
+//import Switch from "@mui/material/Switch";
+import './QRCodes.css'
 
 function TableView(props) {
   const [tabNum, setTabNum] = useState("");
-  const [tableData, setTableData] = useState(null);
+  const [tableData, setTableData] = useState([]);
   const [selectedOption, setSelectedOption] = useState("");
   const [isTableView, setIsTableView] = useState(false);
+  const [logo, setLogo] = useState("");
+  const { formatMessage: t, locale, setLocale } = useIntl();
   let userData = sessionStorage.getItem("userData")
     ? JSON.parse(sessionStorage.getItem("userData"))
     : "";
@@ -36,15 +43,73 @@ function TableView(props) {
     : null;
   const merchCode = merchantData ? merchantData.merchantCode : "";
 
+  useEffect(() => {
+    fetchTableData();
+  }, []);
+
+  const fetchTableData = async () => {
+    await axios.get(getTabByUser).then((response) => {
+      setTableData(response.data);
+    });
+  };
+
+  // Function to toggle availability
+  const handleToggleAvailability = (tableId) => {
+    const updatedData = tableData.map((table) => {
+      if (table.id === tableId) {
+        const newAvailability = !table.isAvailable;
+
+        // Update backend
+        axios
+          .put(`${baseURL}/api/tables/${tableId}?merchantCode=${merchCode}`, {
+            ...table,
+            isAvailable: newAvailability,
+          })
+          .then(() => {
+            // Update local state after success
+            setTableData((prevData) =>
+              prevData.map((t) =>
+                t.id === tableId ? { ...t, isAvailable: newAvailability } : t
+              )
+            );
+          })
+          .catch((error) => {
+            console.error("Failed to update availability:", error);
+          });
+      }
+      return table;
+    });
+    setTableData(updatedData);
+  };
+
   const getTabByUser = `${baseURL}/api/tables?merchantCode=${merchCode}`;
+ let companyLogo = "/images/logo.png";
+
+
+  function base64Converter(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onload = function () {
+      var reader = new FileReader();
+      reader.onloadend = function () {
+        callback(reader.result);
+      }
+      reader.readAsDataURL(xhr.response);
+    };
+    xhr.open('GET', url);
+    xhr.responseType = 'blob';
+    xhr.send();
+  }
+
+  base64Converter(merchantData ? merchantData.logoImg : "", function (dataUrl) {
+    console.log('RESULT:', dataUrl)
+    setLogo(dataUrl);
+  })
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [tabCapcity, setTabCapcity] = useState([]);
   const [notes, setNotes] = useState("");
   const [isAvailable, setIsAvailable] = useState(false);
   const [tableId, setTableId] = useState("");
-
-  console.log(getTabByUser);
 
   const handleTabNum = (event) => {
     setTabNum(event.target.value);
@@ -55,28 +120,33 @@ function TableView(props) {
   };
 
   const downloadQr = (element_id) => {
-    console.log("i am downloading")
     const element = document.getElementById(element_id);
-      document.getElementById(element_id).style.display = "block"
+    document.getElementById(element_id).style.display = "block";
     html2canvas(element).then((canvas) => {
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF('p', 'mm', 'a4');
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
       const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
-    const imgWidth = canvas.width;
-    const imgHeight = canvas.height;
-    const scaleFactor = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      const imgWidth = canvas.width;
+      const imgHeight = canvas.height;
+      const scaleFactor = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
 
-    const x = (pdfWidth - imgWidth * scaleFactor) / 2;
-    const y = (pdfHeight - imgHeight * scaleFactor) / 2;
+      const x = (pdfWidth - imgWidth * scaleFactor) / 2;
+      const y = (pdfHeight - imgHeight * scaleFactor) / 2;
 
-
-    pdf.addImage(imgData, 'PNG', x, y, imgWidth * scaleFactor, imgHeight * scaleFactor);
+      pdf.addImage(
+        imgData,
+        "PNG",
+        x,
+        y,
+        imgWidth * scaleFactor,
+        imgHeight * scaleFactor
+      );
       pdf.save("qrcode.pdf");
     });
 
     setTimeout(() => {
-      document.getElementById(element_id).style.display = "none"
+      document.getElementById(element_id).style.display = "none";
     }, 1000);
   };
 
@@ -144,15 +214,14 @@ function TableView(props) {
       });
   };
 
+  const getData = async () => {
+    await axios.get(getTabByUser).then((response) => {
+      setTableData(response.data);
+    });
+  };
   useEffect(() => {
-    console.log(tableData);
-    if (!tableData) {
-      axios.get(getTabByUser).then((response) => {
-        console.log(response.data);
-        setTableData(response.data);
-      });
-    }
-  });
+    getData();
+  }, []);
 
   const handleNote = (event) => {
     setNotes(event.target.value);
@@ -161,6 +230,8 @@ function TableView(props) {
   const handleAvail = () => {
     setIsAvailable(!isAvailable);
   };
+
+  console.log("Tabel data that shubham want", tableData);
 
   const handleEdit = (tabId) => {
     console.log(tabId);
@@ -173,36 +244,35 @@ function TableView(props) {
     setTabNum(fltData[0].number);
     setDialogOpen(true);
   };
-
   function openCanvas() {
     const tableContainer = document.querySelector(".category-list");
     const table = tableContainer.querySelector("table");
-  
+
     // Create canvas and set initial size
     const canvas = document.createElement("canvas");
     canvas.width = tableContainer.offsetWidth;
     canvas.height = tableContainer.offsetHeight;
     tableContainer.appendChild(canvas);
-  
+
     const ctx = canvas.getContext("2d");
-  
+
     const rectangleWidth = 250;
     const rectangleHeight = 100;
     const borderWidth = 2;
     const spacing = 50;
-  
+
     let isDragging = false;
     let clickedIndex = null;
     let isFrozen = false;
-  
+
     function drawRectangle(index, tableInfo) {
       const x = tableInfo.x;
       const y = tableInfo.y;
-  
+
       ctx.strokeStyle = "black";
       ctx.lineWidth = borderWidth;
       ctx.strokeRect(x, y, rectangleWidth, rectangleHeight);
-  
+
       ctx.fillStyle = tableInfo.isAvailable ? "lightgreen" : "red";
       ctx.fillRect(
         x + borderWidth,
@@ -210,37 +280,37 @@ function TableView(props) {
         rectangleWidth - borderWidth * 2,
         rectangleHeight - borderWidth * 2
       );
-  
+
       ctx.fillStyle = "black";
       ctx.font = "24px Arial bold";
       const textWidth = ctx.measureText(tableInfo.capacity).width;
       const textX = x + (rectangleWidth - textWidth) / 2;
       const textY = y + rectangleHeight / 2;
       ctx.fillText(tableInfo.capacity, textX, textY);
-  
+
       ctx.font = "24px Arial bold";
       ctx.fillText(
         `Table ${tableInfo.number}`,
         x + borderWidth + 20,
         y + borderWidth + 20
       );
-  
+
       const buttonWidth = 80;
       const buttonHeight = 30;
       const buttonX = x + rectangleWidth - buttonWidth - 10;
       const buttonY = y + rectangleHeight - buttonHeight - 10;
-  
+
       ctx.fillStyle = "#007BFF";
       ctx.fillRect(buttonX, buttonY, buttonWidth, buttonHeight);
       ctx.fillStyle = "white";
       ctx.font = "14px Arial";
       ctx.fillText("New Order", buttonX + 10, buttonY + 20);
-  
+
       const toggleWidth = 80;
       const toggleHeight = 30;
       const toggleX = x + 10;
       const toggleY = y + rectangleHeight - toggleHeight - 10;
-  
+
       ctx.fillStyle = tableInfo.isAvailable ? "green" : "gray";
       ctx.fillRect(toggleX, toggleY, toggleWidth, toggleHeight);
       ctx.fillStyle = "white";
@@ -251,38 +321,38 @@ function TableView(props) {
         toggleY + 20
       );
     }
-  
+
     function adjustCanvasSize() {
       canvas.width = tableContainer.offsetWidth;
       canvas.height = tableContainer.offsetHeight;
-  
+
       // Redraw rectangles after resizing
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       layoutCards();
     }
-  
+
     function layoutCards() {
       let currentX = borderWidth;
       let currentY = borderWidth;
-  
+
       tableData.forEach((tableInfo, index) => {
         if (currentX + rectangleWidth > canvas.width) {
           currentX = borderWidth;
           currentY += rectangleHeight + borderWidth * 2 + spacing;
         }
-  
+
         tableInfo.x = currentX;
         tableInfo.y = currentY;
         drawRectangle(index, tableInfo);
-  
+
         currentX += rectangleWidth + borderWidth * 2 + spacing;
       });
     }
-  
+
     // API call to update table availability
     function updateTableAvailability(tableInfo) {
       const newAvailability = !tableInfo.isAvailable;
-  
+
       // Update the API
       axios
         .put(`${baseURL}/api/tables/${tableInfo.id}?merchantCode=${merchCode}`, {
@@ -294,7 +364,7 @@ function TableView(props) {
         })
         .then((response) => {
           console.log(response.data);
-  
+
           // Update local state
           tableInfo.isAvailable = newAvailability;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -304,20 +374,20 @@ function TableView(props) {
           console.error('Error updating table availability:', error);
         });
     }
-  
+
     // Initial layout of cards
     layoutCards();
-  
+
     // Mouse event handling
     canvas.addEventListener("mousedown", (event) => {
       if (!isFrozen) {
         const clickX = event.offsetX;
         const clickY = event.offsetY;
-  
+
         tableData.forEach((tableInfo, index) => {
           const x = tableInfo.x;
           const y = tableInfo.y;
-  
+
           if (
             clickX >= x &&
             clickX <= x + rectangleWidth &&
@@ -330,42 +400,42 @@ function TableView(props) {
         });
       }
     });
-  
+
     canvas.addEventListener("mousemove", (event) => {
       if (isDragging && !isFrozen) {
         const newX = event.offsetX - rectangleWidth / 2;
         const newY = event.offsetY - rectangleHeight / 2;
         tableData[clickedIndex].x = newX;
         tableData[clickedIndex].y = newY;
-  
+
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         layoutCards();
       }
     });
-  
+
     canvas.addEventListener("mouseup", () => {
       isDragging = false;
       clickedIndex = null;
     });
-  
+
     canvas.addEventListener("click", (event) => {
       const clickX = event.offsetX;
       const clickY = event.offsetY;
-  
+
       tableData.forEach((tableInfo, index) => {
         const x = tableInfo.x;
         const y = tableInfo.y;
-  
+
         const buttonWidth = 80;
         const buttonHeight = 30;
         const buttonX = x + rectangleWidth - buttonWidth - 10;
         const buttonY = y + rectangleHeight - buttonHeight - 10;
-  
+
         const toggleWidth = 80;
         const toggleHeight = 30;
         const toggleX = x + 10;
         const toggleY = y + rectangleHeight - toggleHeight - 10;
-  
+
         if (
           clickX >= buttonX &&
           clickX <= buttonX + buttonWidth &&
@@ -374,7 +444,7 @@ function TableView(props) {
         ) {
           console.log(`New Order clicked for Table ${tableInfo.number}`);
         }
-  
+
         if (
           clickX >= toggleX &&
           clickX <= toggleX + toggleWidth &&
@@ -386,33 +456,31 @@ function TableView(props) {
         }
       });
     });
-  
+
     // Adjust canvas size on window resize
     window.addEventListener("resize", adjustCanvasSize);
-  
+
     const freezeButton = document.createElement("button");
     freezeButton.textContent = "Freeze Tables";
     freezeButton.addEventListener("click", () => {
       isFrozen = !isFrozen;
       freezeButton.textContent = isFrozen ? "Unfreeze Tables" : "Freeze Tables";
     });
-  
+
     tableContainer.appendChild(freezeButton);
-  
+
     // Toggle visibility of canvas and table
     table.style.display = isTableView ? "block" : "none";
     canvas.style.display = isTableView ? "none" : "block";
-  
+
     if (isTableView) {
       table.style.display = "table";
     }
   }
-  
-  
-  
-  console.log(isTableView)
-  
 
+
+
+  console.log(isTableView)
   return (
     <div>
       <Dialog open={dialogOpen} maxWidth="mb" fullWidth={true}>
@@ -435,7 +503,8 @@ function TableView(props) {
             placeholder="Enter table no"
             value={tabNum}
             onChange={handleTabNum}
-          /> <br/>
+          />{" "}
+          <br />
           <label className="m-2">
             {" "}
             Table Capacity <span className="text-danger">*</span>
@@ -446,7 +515,6 @@ function TableView(props) {
             value={tabCapcity}
             onChange={handleCapacity}
           />
-
           <span
             style={{
               display: "flex",
@@ -476,7 +544,7 @@ function TableView(props) {
             value={notes}
             onChange={handleNote}
           />
-<br />
+          <br />
           <Button
             variant="contained"
             color="error"
@@ -492,7 +560,6 @@ function TableView(props) {
           >
             Close{" "}
           </Button>
-
           <Button
             variant="contained"
             style={{ margin: "15px" }}
@@ -505,114 +572,158 @@ function TableView(props) {
       </Dialog>
 
       <div className="header">
-        <h4>Table View</h4>
-        <FormGroup>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={isTableView}
-                onChange={() => {
-                  setIsTableView(!isTableView);
-                  openCanvas();
-                }}
-              />
-            }
-            label="Table View"
-          />
-        </FormGroup>
-        <button
+        <h4>{t({ id: "manage_tables" })}</h4>
+        <ButtonGroup aria-label="Basic button group">
+                <Button
+                  variant={!isTableView ? "contained" : "outlined"}
+                  style={{
+                    backgroundColor:!isTableView  ? "#F7C919" : "inherit",
+                    borderColor: !isTableView ? "#F7C919" : "inherit",
+                    color: !isTableView ? "black" : "inherit",
+                    borderColor: "#F7C919",
+                  }}
+                  onClick={() => setIsTableView(!isTableView)}
+                >
+                 {t({ id: "status_view" })}
+                </Button>
+                <Button
+                  variant={!isTableView ? "contained" : "outlined"}
+                  style={{
+                    backgroundColor:
+                      isTableView  ? "#F7C919" : "inherit",
+                    borderColor: isTableView  ? "#F7C919" : "inherit",
+                    color: isTableView  ? "black" : "inherit",
+                    borderColor: "#F7C919",
+                  }}
+                 onClick={() => setIsTableView(!isTableView)}
+                >
+                  {t({ id: "detail_view" })}
+                </Button>
+                </ButtonGroup>
+        
+        {isTableView ? <button
           className="add_btn"
-          style={{ marginRight: "50px" }}
           onClick={() => setDialogOpen(true)}
         >
-          <AddIcon /> Add New
-        </button>
+          <AddIcon /> Add Table
+        </button>:<span></span>}
       </div>
-
-      <div className="category-list" style={{ padding: "20px" }}>
-        <table style={{ width: "100%" }}>
-          <thead>
-            <tr>
-              <th>Table Number</th>
-              <th>Capacity</th>
-              <th>Notes</th>
-              <th>Status</th>
-              <th>Download QR</th>
-              <th colSpan="2">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tableData &&
-              tableData.map((tabInfo, k) => (
-                <tr
-                  key={tabInfo.id}
-                  style={{ borderBottom: "1px solid #f0eeee", margin: "5px" }}
-                >
-                  <td style={{ fontWeight: "bold" }}>{tabInfo.number}</td>
-                  <td>{tabInfo.capacity}</td>
-                  <td>{tabInfo.notes}</td>
-                  <td>{tabInfo.isAvailable ? <span> <TableBarIcon style={{color:"green"}} /></span> : <RestaurantMenuIcon style={{color:"red"}}/>}</td>
-                  <td align="center">
-                    <div 
-                      id={"qr-img~" + k}
-                  
-                      style={{
-                        display:"none",
-                        border: "2px dotted",
-                        border: "2px dotted",
-                        padding: "5rem",
-                        margin: "5rem",
-                        textAlign: "center",
-                      }}
-                    >
-                      <QRCode
-                        id="qrcode"
-                        size={556}
-                        style={{
-                          height: "280px",
-                          width: "280px",
-                        }}
-                        value={`https://tto.${baseURL.split('.')[1]}.${baseURL.split('.')[2]}/?merchantCode=${merchCode}&isScan=true&tableNumber=${tabInfo.number}`}
-                        // viewBox={0 0 456 456}
-                      />
-                      <h1>{"Table #" + (k + 1)}</h1>
-                    </div>
-
-                    <IconButton
-                      aria-label="download"
-                      size="large"
-                      color="info"
-                      // style={{marginLeft:"5rem"}}
-                    >
-                      <DownloadIcon onClick={() => downloadQr("qr-img~" + k)} />
-                    </IconButton>
-                  </td>
-                  <td align="center">
-                    <IconButton
-                      aria-label="edit"
-                      size="large"
-                      color="info"
-                      // style={{marginLeft:"5rem"}}
-                      onClick={() => handleEdit(tabInfo.id)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </td>
-                  <td align="center">
-                    <IconButton
-                      aria-label="delete"
-                      size="large"
-                      color="error"
-                      onClick={() => handleDelete(tabInfo.id)}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
-      </div>
+      {/* Edited By Sk */}
+      {isTableView ? (
+        <div className="category-list" style={{ padding: "20px" }}>
+          <table style={{ width: "100%",    borderCollapse: "collapse" }}>
+            <thead style={{ borderBottom: "2px solid rgb(207 205 205)", margin: "5px" }}>
+              <tr>
+                <th>Table Number</th>
+                <th>Capacity</th>
+                <th>Notes</th>
+                <th>Status</th>
+                <th>Download QR</th>
+                <th colSpan="2">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {tableData &&
+                tableData.map((tabInfo, k) => (
+                  <tr
+                    key={tabInfo.id}
+                    style={{ borderBottom: "1px solid rgb(207 205 205)", margin: "5px" }}
+                  >
+                    <td style={{ fontWeight: "bold" }}>{tabInfo.number}</td>
+                    <td>{tabInfo.capacity}</td>
+                    <td>{tabInfo.notes}</td>
+                    <td>
+                      {tabInfo.isAvailable ? (
+                        <span>
+                          {" "}
+                          <TableBarIcon style={{ color: "green" }} />
+                        </span>
+                      ) : (
+                        <RestaurantMenuIcon style={{ color: "red" }} />
+                      )}
+                    </td>
+                    <td align="center">
+                  <div className="table_QRmain" id={"qr-img~" + k}>
+                      <div className="table_QRsub">
+                        <h1>{"TABLE #" + (k + 1)}</h1>
+                        <div className="tableQRCode">
+                          <p><b>Scan with Mobile Camera</b></p>
+                          <QRCode
+                            id="qrcode"
+                            size={556}
+                            style={{
+                              // height: "280px",
+                              // width: "280px",
+                              height: "326px",
+                              width: "314px"
+                            }}
+                            value={`${configs.ttoUrl}/?merchantCode=${merchCode}&isScan=true&tableNumber=${tabInfo.number}`}
+                          // viewBox={0 0 456 456}
+                          />
+                        </div>
+                        <div className="logos">
+                          <img src={logo && logo} />
+                          <div>
+                            <span style={{ color: "#fff", display: "flex", flexDirection: "column", fontStyle: "italic" }}>Powered by</span>
+                            <h5 style={{ color: "#fff", fontSize: "27px", margin: "0px" }}>{configs.productName}</h5>
+                          </div>
+                        </div>
+                      </div>
+                      </div>
+                      <IconButton
+                        aria-label="download"
+                        size="large"
+                        color="info"
+                        // style={{marginLeft:"5rem"}}
+                      >
+                        <DownloadIcon
+                          onClick={() => downloadQr("qr-img~" + k)}
+                        />
+                      </IconButton>
+                    </td>
+                    <td align="center">
+                      <IconButton
+                        aria-label="edit"
+                        size="large"
+                        color="info"
+                        // style={{marginLeft:"5rem"}}
+                        onClick={() => handleEdit(tabInfo.id)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </td>
+                    <td align="center">
+                      <IconButton
+                        aria-label="delete"
+                        size="large"
+                        color="error"
+                        onClick={() => handleDelete(tabInfo.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="media-card-container">
+          {tableData.map((data, index) => (
+            <MediaCard
+              key={index}
+              table={data.number}
+              image={
+                "https://images.pexels.com/photos/271696/pexels-photo-271696.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+              }
+              capacity={data.capacity}
+              available={data.isAvailable}
+              merchantCode={merchCode}
+              onToggle={() => handleToggleAvailability(data.id)} // Pass toggle function
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -64,6 +64,8 @@
             "total_ammount":"Total Ammount",
              "todays_report":"Todays Report",
               "todays_summary":"Todays Summary",
-               "pay_mode":"Select payment mode"
-
+               "pay_mode":"Select payment mode",
+               "manage_tables":"Manage Tables",
+               "status_view":"Status View",
+               "detail_view" : "Detail View"
 }

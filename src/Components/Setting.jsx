@@ -785,8 +785,8 @@ const Setting = () => {
         >
           {userInfo.length
             ? userInfo.map((info, i) => {
-                console.log("fetch information-----", info);
-                console.log("cordinates------", info.location.coordinates[0]);
+                //console.log("fetch information-----", info);
+                //console.log("cordinates------", info.location.coordinates[0]);
                 let fData = providerDetail.filter(
                   (cl) => cl.id === info.activeProviderId
                 );
@@ -979,7 +979,7 @@ const Setting = () => {
                           type="number"
                           readOnly={true}
                           style={{ marginLeft: "5px", width: "100px" }}
-                          value={info.location?.coordinates[1] || " "}
+                          value={info?.location?.coordinates?info.location.coordinates[1] : 0}
                         />
                       </div>
 
@@ -991,7 +991,7 @@ const Setting = () => {
                           type="number"
                           readOnly={true}
                           style={{ marginLeft: "5px", width: "100px" }}
-                          value={info.location?.coordinates[0] || " "}
+                          value={info?.location?.coordinates?info.location.coordinates[0] : 0}
                         />
                       </div>
                     </div>

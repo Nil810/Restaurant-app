@@ -51,6 +51,7 @@ function PaymentOptions(props) {
                   onClick={() => {
                     props.handlePaymentClick(1);
                     props.handlePayMode("UPI");
+                    props.closeParentDialog();
                   }}
                 >
                     {t({ id: "upi" })}
@@ -68,6 +69,7 @@ function PaymentOptions(props) {
                   onClick={() => {
                     props.handlePaymentClick(2);
                     props.handlePayMode("CARD");
+                    props.closeParentDialog();
                   }}
                 >
                   {t({ id: "card" })}
@@ -85,6 +87,7 @@ function PaymentOptions(props) {
                   onClick={() => {
                     props.handlePaymentClick(3);
                     props.handlePayMode("COUPON");
+                    props.closeParentDialog();
                   }}
                 >
                     {t({ id: "coupouns" })}

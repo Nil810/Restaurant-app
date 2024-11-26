@@ -111,7 +111,8 @@ function Category(props) {
           baseURL + "/api/categories/" + catId + `?merchantCode=${merchCode}`,
           {
             name: foodName,
-            image: imageURL ? imageURL : selectedImage.image,
+            // image: imageURL ? imageURL : selectedImage.image,
+            image: selectedImage ? selectedImage.image : (imageURL || ''),
             tags: tags.length ? tags.join("~") : "",
             isAddOn: addOn,
             serialNumber: catIndex ? catIndex : 1,
@@ -128,7 +129,8 @@ function Category(props) {
       axios
         .post(`${baseURL}/api/categories?merchantCode=${merchCode}`, {
           name: foodName,
-          image: imageURL ? imageURL : selectedImage.image,
+          // image: imageURL ? imageURL : selectedImage.image,
+          image: selectedImage ? selectedImage.image : (imageURL || ''),
           tags: tags.length ? tags.join("~") : "",
           isAddOn: addOn,
           serialNumber: catIndex ? catIndex : 1,
@@ -275,7 +277,7 @@ function Category(props) {
   };
   const handleSubmitImage = () => {
     if (selectedImage) {
-      // console.log("Selected Image:", selectedImage);
+      console.log("Selected Image:", selectedImage);
     } else {
       console.error("No image selected!");
     }
@@ -397,9 +399,9 @@ function Category(props) {
           >
             <lable>{"Category Icon: "}</lable>
             <Button variant="contained" onClick={handleGallery}>
-              Add From Gallery
+              Choose from Gallery
             </Button>
-            <Button variant="contained" onClick={handleUpload}>
+            <Button variant="outlined" onClick={handleUpload}>
               Upload New
             </Button>
           </div>
@@ -484,9 +486,8 @@ function Category(props) {
             <label>Tags</label>
             <div className="tags-input">
               <ul id="tags">
-                {tags.length ? (
-                  tags.length &&
-                  tags.map((tag, index) => (
+                  {tags.length &&
+                  tags.filter(t=>t.length).map((tag, index) => (
                     <li key={index} className="tag">
                       <span className="tag-title">{tag}</span>
                       <span className="btn" onClick={() => removeTags(index)}>
@@ -494,9 +495,7 @@ function Category(props) {
                       </span>
                     </li>
                   ))
-                ) : (
-                  <span className="tag-title"></span>
-                )}{" "}
+                } 
               </ul>
               <input
                 className="input_cls"
@@ -562,6 +561,7 @@ function Category(props) {
               top: "0",
               backgroundColor: "#fff",
               zIndex: "1",
+              justifyContent:"space-evenly"
             }}
           >
             <div
@@ -591,7 +591,10 @@ function Category(props) {
                 border:"1px solid black",
                 borderRadius:"15px",
                 marginLeft:"5px",
-                padding:"5px 15px"
+                padding:"5px 15px",
+                cursor:"pointer",
+                backgroundColor:"#000",
+                color:"#fff"
               }}
               // onClick={}
               />
@@ -624,9 +627,9 @@ function Category(props) {
             }}
           >
             <Button
-              style={{ background: "red" }}
-              variant="contained"
+               variant="outlined"
               onClick={() => setShowGallery(false)}
+              color="warning"
             >
               Cancel
             </Button>
@@ -635,7 +638,7 @@ function Category(props) {
               variant="contained"
               onClick={handleSubmitImage}
             >
-              Next
+              SELECT
             </Button>
           </div>
         </div>
@@ -846,7 +849,7 @@ function Category(props) {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClosePopup} color="primary">
+          <Button onClick={handleClosePopup} color="primary"  variant="outlined">
             Close
           </Button>
         </DialogActions>

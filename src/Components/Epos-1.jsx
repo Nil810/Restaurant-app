@@ -43,13 +43,7 @@ import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import BillPrint from "./BillPrint";
 import PaymentOptions from "./sub_comp/PaymentOptions";
 
-
 const Epos = (props) => {
-  const [showSelectedData, setShowSelectedData] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState(null);
-
-  const [searchResults, setSearchResults] = useState([]);
-
   const [order, setOrder] = useState();
   const [popUpOpen, setPopUpOpen] = useState(false);
   const closeModal = () => setPopUpOpen(false);
@@ -123,12 +117,9 @@ const Epos = (props) => {
   const [ordId, setOrdId] = useState("");
   const { formatMessage: t, locale, setLocale } = useIntl();
   let authApi = configs.authapi;
-
-// state for controlling address dialog
-const [showAddressDialog, setShowAddressDialog] = useState(false);
-  const handleTableChange = (tabNum) => {
-    setSelectedTable(tabNum);
-    let tabId = tableData.filter((tab) => tab.number === tabNum);
+  const handleTableChange = (event) => {
+    setSelectedTable(event.target.value);
+    let tabId = tableData.filter((tab) => tab.number === event.target.value);
     console.log(tabId);
     localStorage.setItem("tableId", tabId[0].id);
   };
@@ -626,103 +617,35 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     });
   }, []);
 
-  // const handleSearchCustomer = () => {
-
-  //   const customer = customerData.find(
-  //     (customer) =>
-  //       customer.phnumber === phnumber
-  //      ||
-  //       customer.email === email ||
-  //       customer.name === name
-  //   );
-  //   if (customer) {
-  //     setIsCustomerFound(true);
-  //     console.log("Customer found:", customer);
-  //     setName(customer.firstName);
-  //     setEmail(customer.email);
-  //     setPhnumber(customer.phone);
-  //     setCustId(customer.id);
-  //     setAddress(customer.address);
-  //   } else {
-  //     setIsCustomerFound(false);
-  //       // Reset fields for new customer entry
-  //   setName("");
-  //   setEmail("");
-  //   setAddress("");
-
-  //     return <Alert severity="error">Customer not found</Alert>;   
-  //   }
-  // };
-
-
-// Replace the existing handleSearchCustomer function
-const handleSearchCustomer = () => {
-  if (!phnumber ) return;
-  
-  // Find all matching customers based on phone number
-  const matchingCustomers = customerData.filter(customer => 
-    customer.phone && customer.phone.includes(phnumber)
-  );
-
-  setSearchResults(matchingCustomers);
-  setIsCustomerFound(matchingCustomers.length > 0);
-};
-
-
- // Add this new function to handle radio selection
-const handleCustomerSelect = (customer) => {
-  setName(customer.firstName);
-  setEmail(customer.email);
-  setPhnumber(customer.phone);
-  setCustId(customer.id);
-  setAddress(customer.address);
-  setIsCustomerFound(true);
-  // setSearchResults([]);
-};
-
-
-const handleSaveCustomerSelection = () => {
-  if (phnumber) {
-    // Set customer details in state
-    setMoblileNo(phnumber);
-    setName(name);
-    setAddress(address);
-    
-    // // Initialize or update order object
-    // const updatedOrder = {
-    //   ...(order || {}), // Create new order if none exists
-    //   customerId: custId,
-    //   customerPhone: phnumber,
-    //   customerName: name,
-    //   customerAddress: address,
-    //   orderItems: order?.orderItems || [] // Ensure orderItems exists
-    // };
-    
-    // // Update order state
-    // setOrder(updatedOrder);
-    
-    // Reset UI states
-    setOpenPhone(false);
-    setSearchResults([]);
-    setCustomerDetail(false);    
-
-  }
-};
-
-
+  const handleSearchCustomer = () => {
+    const customer = customerData.find(
+      (customer) =>
+        customer.phnumber === phnumber ||
+        customer.email === email ||
+        customer.name === name
+    );
+    if (customer) {
+      setIsCustomerFound(true);
+      console.log("Customer found:", customer);
+      setName(customer.firstName);
+      setEmail(customer.email);
+      setPhnumber(customer.phone);
+    } else {
+      setIsCustomerFound(false);
+      alert("Customer not found");
+      return <Alert severity="error">Customer not found</Alert>;
+    }
+  };
   const handleAddCustomer = () => {
     if (phnumber) {
       // createNewOrder()
-      setShowAddressDialog(true);
-
 
       if (existingData != {} && custId != "") {
         axios
           .put(`${authApi}/customer/${custId}`, {
-            email: email,
             phone: phnumber,
             firstName: name,
-           
+            email: email,
           })
           .then((res) => {
             console.log(res.data);
@@ -730,34 +653,30 @@ const handleSaveCustomerSelection = () => {
           });
       } else {
         let data = {
-          email: email || `${phnumber}@menulive.in`,
+          email: email,
           phone: phnumber,
-          firstName: phnumber,
-          lastName: "",         
-          address: address,
+          firstName: name,
+          lastName: "",
+          address: "",
           password: phnumber,
           isEmailVerified: false,
           isPhoneVerified: false,
           referenceDetails: "",
           merchantCode: merchCode,
-          userType: "CUSTOMER" 
         };
-    
         axios
           .post(
             `${authApi}/customer/auth-and-register`,
-            data 
+            { ...data }
           )
-          .then((res) => {      
+          .then((res) => {
             setCustId(res.data.user.id);
-            setShowAddressDialog(false);
-            console.log(res.data);           
+            console.log(res.data);
           });
         setOpenPhone(false);
       }
     }
   };
- 
   const handleCancle = () => {
     setOrderItem([]);
     setOrder();
@@ -783,18 +702,6 @@ const handleSaveCustomerSelection = () => {
   const handleCancel = () => {
     setOpenPhone(false);
     setBillPrint(false);
-
-
-    
-     // Reset all customer-related states
-  setPhnumber('');
-  setName('');
-  setEmail('');
-  setAddress('');
-  setCustId('');
-  setSearchResults([]);
-  setShowSelectedData(false);
-  setIsCustomerFound(true);
   };
 
 
@@ -1110,40 +1017,20 @@ const handleSaveCustomerSelection = () => {
     return (
       <div>
         <div className={"cat_cont"}>
-          <div>
-          <img 
-                      src={"./images/cat_logo.jpeg"}
-                      className={'cat_epos_icon'}
-                     
-                    />
           <div className={!selectedCat?"chip selected-chip":"chip"} onClick={handleAllCategory}>
             All{" "}
           </div>
-          </div>
+
           {cat &&
             cat.filter(ct=> ct.isOrderableAlone || !ct.isAddOn).map((category) => {
               let cId = category._id || category.id;
-              
               return (
                 <div
                   onClick={() =>
                     categoryClickHandler(category.name, cId, category.isAddOn)
                   }
                 >
-                       <img 
-                      src={`${baseURL}/` + category.image}
-                      alt={category.name}
-                      className={'cat_epos_icon'}
-                      onError={(e) => e.target.src = "./images/blank.jpg"}
-                    />
-
-                  <div className={category.id== selectedCat?"chip selected-chip":"chip"}>
-                  
-                    {category.name}
-                    </div>
-                   
-                    
-                    
+                  <div className={category.id== selectedCat?"chip selected-chip":"chip"}>{category.name}</div>
                 </div>
               );
             })}
@@ -1242,7 +1129,7 @@ const handleSaveCustomerSelection = () => {
                 }}
               >
                 <Button
-                  variant="outlined"
+                  variant="contained"
                   id="btn_cancel"
                   onClick={closeHandler}
                 >
@@ -1263,6 +1150,7 @@ const handleSaveCustomerSelection = () => {
    // updateOrderDetails();
   };
 
+  
 
   const handlePaymentClick = (index) => {
     setPaymentIndex(index);
@@ -1309,7 +1197,6 @@ const handleSaveCustomerSelection = () => {
                   onClick={() => {
                     handleClick(1);
                     handleDineIn();
-                    handleTableDetail();
                   }}
                 >
                   {t({ id: "dine_in" })}
@@ -1331,29 +1218,26 @@ const handleSaveCustomerSelection = () => {
                    {t({ id: "delivery" })}
                 </Button>
               </ButtonGroup>
-
-
               <Dialog
                 aria-labelledby="max-width-dialog-title"
                 style={{ backgroundColor: "#fff !important" }}
                 open={openPhone}
-
                 fullWidth={true}
                 maxWidth="xs"
               // className='Orderp'
               >
-                <DialogTitle id="titorder" style={{textAlign:"center"}}>
+                <DialogTitle id="titorder">
                   <b>Enter Customer Details</b>
                 </DialogTitle>
-                <h4 style={{margin:"10px"}}>Enter Mobile Number:</h4>
+
                 <div
                   style={{
                     display: "flex",
-                    flexDirection: "row",
-                    margin: "5px",
+                    flexDirection: "column",
+                    margin: "10px",
                   }}
                 >
-                  
+                  <label>Enter Mobile Number</label>
                   <input
                     type="number"
                     placeholder="Enter Mobile"
@@ -1361,77 +1245,41 @@ const handleSaveCustomerSelection = () => {
                     value={phnumber}
                     className="number_input"
                     pattern="[1-9]{1}[0-9]{9}"
-                    style={{  padding: "5px" ,marginLeft:"10px",width:"70%",fontSize:"1.2em"}}
+                    style={{ border: "none", padding: "10px" }}
                   />
-            
-                  <button 
-                    onClick={()=>handleSearchCustomer()} 
-                    style={{margin:"10px",borderRadius:"10px",background:"#000",color:"#fff"}}>
-                       <SearchIcon/>
-                  </button>               
                 </div>
-
-
-
-        {/* Search Results Section */}
-    {searchResults.length > 0 && (
-      <div style={{ margin: "20px" }}>
-        <Typography variant="subtitle1">Select Existing Customer:</Typography>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {searchResults.map((customer) => (
-            <div key={customer.id} style={{ display: "flex", alignItems: "center" }}>
-              <input
-                type="radio"
-                id={customer.id}
-                name="customerSelect"
-                onChange={() => handleCustomerSelect(customer)}
-                
-              />
-              <label htmlFor={customer.id} style={{ marginLeft: "10px" }}>
-                {customer.firstName} - {customer.phone}
-                {customer.address && ` - ${customer.address}`}
-              </label>
-            </div>
-          ))}
-
-        </div>
-       
-      </div>
-    )}
- 
-
-  {  !isCustomerFound && phnumber && phnumber.length>3 && (
-  <div style={{ 
-    color: '#f44336',
-    padding: '8px 16px',
-    marginTop: '8px',
-    borderRadius: '4px',
-    marginLeft: '10px',
-    marginRight: '10px'
-  }}>
-    Customer not found
-  </div>
-)}
-
-
-
-                {phnumber && phnumber.length>3 && !isCustomerFound && ( 
-                   
-                   <div style={{ padding: "20px" }}>
-                    <h3>Add Delievery Address:</h3>
-                   <TextField
-                     fullWidth
-                     multiline
-                     rows={3}
-                     label="Delivery Address"
-                     value={address}
-                     onChange={(e) => setAddress(e.target.value)}
-                     variant="outlined"
-                     style={{ marginBottom: "20px" }}
-                   />
-                   
-                 </div>
-                  )}
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    margin: "10px",
+                  }}
+                >
+                  <label>Enter Email</label>
+                  <input
+                    type="email"
+                    placeholder="Enter Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={{ border: "none", padding: "10px" }}
+                  />
+                </div>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    margin: "10px",
+                  }}
+                >
+                  <label>Enter Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter Name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    style={{ border: "none", padding: "10px" }}
+                  />
+                </div>
                 <div
                   style={{
                     display: "flex",
@@ -1440,74 +1288,31 @@ const handleSaveCustomerSelection = () => {
                   }}
                 >
                   <Button
-                    variant="outlined"
+                    variant="contained"
                     color="error"
                     onClick={handleCancel}
                   >
                     Close
                   </Button>
 
-
-                  { phnumber && phnumber.length>3 && !isCustomerFound && ( 
-                   <Button
+                  <Button
                     variant="contained"
                     color="primary"
-                    onClick={handleAddCustomer}
+                    onClick={handleSearchCustomer}
                   >
-                    ADD NEW
+                    Search
                   </Button>
 
-                  )}
-
-
-            { phnumber&& phnumber.length>3 && isCustomerFound &&(
-                    <Button
-        variant="contained"
-        onClick={handleSaveCustomerSelection}
-        style={{ width:"50px",textAlign:"center",background: "#f7c919",padding:" 5px 50px" }}
-        
-      >
-        SELECT
-      </Button>
-        )}
-
-                 
-
-                 
+                  <Button
+                    variant="contained"
+                    color="success"
+                    onClick={handleAddCustomer}
+                  >
+                    Add
+                  </Button>
                 </div>
               </Dialog>
-
-              {/* <Dialog 
-  open={showAddressDialog} 
-  onClose={() => setShowAddressDialog(false)}
-  maxWidth="xs"
-  fullWidth
->
-  <DialogTitle>Add Delivery Address</DialogTitle>
-  <div style={{ padding: "20px" }}>
-    <TextField
-      fullWidth
-      multiline
-      rows={3}
-      label="Delivery Address"
-      value={address}
-      onChange={(e) => setAddress(e.target.value)}
-      variant="outlined"
-      style={{ marginBottom: "20px" }}
-    />
-    <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-      <Button 
-        variant="outlined" 
-        onClick={() => setShowAddressDialog(false)}
-      >
-        Cancel
-      </Button>
-    </div>
-  </div>
-</Dialog> */}
-
             </div>
-
 
             <div>
               <ArrowBackIcon onClick={handleBack} id="back" />
@@ -1885,7 +1690,6 @@ const handleSaveCustomerSelection = () => {
   const orderHoldData = orderHold ? JSON.parse(orderHold) : "";
   console.log(orderHoldData);
   console.log(billPrint);
-
   return (
     <div
       className="main_po"
@@ -2013,7 +1817,7 @@ const handleSaveCustomerSelection = () => {
           <input
             type="text"
             placeholder="Customer"
-            onChange={(e) => e.target.value>3 && setMoblileNo(e.target.value)}
+            onChange={(e) => setMoblileNo(e.target.value)}
             value={mobileNo || name}
             style={{
               display: "block",
@@ -2042,18 +1846,15 @@ const handleSaveCustomerSelection = () => {
 
       <Dialog open={tableDetail} style={{ width: "50% !important" }}>
         <div style={{ textAlign: "center", padding: "10px" }}>
-        <h3>Select Table</h3>
           {tableData.length ? (
-            
             <ul id="ul-list">
-             
               {tableData.map((tab) => (
-                <li key={tab.number} onClick={()=>handleTableChange(tab.number)}>
+                <li key={tab.number}>
                   <input
                     type="radio"
                     name="tableSelection"
                     value={tab.number}
-                    style={{fontSize:"1.5em"}}
+                    onChange={handleTableChange}
                   />
                   {`Table Number ${tab.number}`}
                 </li>
@@ -2064,22 +1865,11 @@ const handleSaveCustomerSelection = () => {
           )}
         </div>
 
-        <div style={{ margin: "10px", textAlign: "end"}}>
-        <Button
-            variant="outlined"
-            color="error"
-            
-            onClick={() => {
-              cancelTable();
-            }}
-          >
-            {"Cancel"}
-          </Button>
+        <div style={{ margin: "10px", textAlign: "end" }}>
           <Button
             variant="contained"
-             style={{ background: "#f7c919" ,marginLeft:"80px"}}
+            color="error"
             onClick={() => {
-             
               cancelTable();
             }}
           >
