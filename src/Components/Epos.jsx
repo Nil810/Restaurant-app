@@ -7,6 +7,7 @@ import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import configs, { getParameterByName } from "../Constants";
 import SearchIcon from "@mui/icons-material/Search";
+import EditIcon from "@mui/icons-material/Edit";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { Box } from "@mui/material";
@@ -42,7 +43,6 @@ import CancelIcon from "@mui/icons-material/Cancel";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import BillPrint from "./BillPrint";
 import PaymentOptions from "./sub_comp/PaymentOptions";
-
 
 const Epos = (props) => {
   const [showSelectedData, setShowSelectedData] = useState(false);
@@ -113,19 +113,27 @@ const Epos = (props) => {
   const [selectedCat, setSelectedCat] = useState("");
   const [name, setName] = useState(existingData ? existingData.Name : "");
   const [email, setEmail] = useState(existingData ? existingData.Email : "");
-  const [customInstr, setCustomInstr]= useState("")
+  const [customInstr, setCustomInstr] = useState("");
   const [address, setAddress] = useState(
     existingData ? existingData.Address : ""
   );
   const [tableData, setTableData] = useState([]);
+
+  const [editableItems, setEditableItems] = useState({});
+  const [priceEditDialog, setPriceEditDialog] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [newPrice, setNewPrice] = useState("");
+  const [editedPrices, setEditedPrices] = useState({});
+  
+  
   const [customerData, setCustomerData] = useState([]);
   const [selectedTable, setSelectedTable] = useState("");
   const [ordId, setOrdId] = useState("");
   const { formatMessage: t, locale, setLocale } = useIntl();
   let authApi = configs.authapi;
 
-// state for controlling address dialog
-const [showAddressDialog, setShowAddressDialog] = useState(false);
+  // state for controlling address dialog
+  const [showAddressDialog, setShowAddressDialog] = useState(false);
   const handleTableChange = (tabNum) => {
     setSelectedTable(tabNum);
     let tabId = tableData.filter((tab) => tab.number === tabNum);
@@ -142,8 +150,8 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   const customerID = custId
     ? custId.toString()
     : mobileNo
-      ? mobileNo
-      : randomNumber.toString();
+    ? mobileNo
+    : randomNumber.toString();
 
   const handleClose = () => {
     setAnchorEl(false);
@@ -155,31 +163,33 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   };
 
   const handleAlignment = (event, newAlignment) => {
-    let newVar={};
+    let newVar = {};
     newVar[newAlignment] = variety[newAlignment];
     setSelectedVar(newVar);
   };
 
   const handleCookAlignment = (newAlignment) => {
     let updateCookInst = [...cookalignment];
-    if(cookalignment.indexOf(newAlignment) == -1){
+    if (cookalignment.indexOf(newAlignment) == -1) {
       updateCookInst.push(newAlignment);
-    }else{
-      updateCookInst.splice(updateCookInst.indexOf(newAlignment),1);
+    } else {
+      updateCookInst.splice(updateCookInst.indexOf(newAlignment), 1);
     }
     setCookAlignment(updateCookInst);
   };
 
   let cat = categories;
 
-  const adAddons = (e, itemId, index,pi) => {
+  const adAddons = (e, itemId, index, pi) => {
     let AoIndx = -1;
-    let newAdOns =[...selAdons]; 
-    newAdOns.map((ao, i) => {return ao.id == itemId?AoIndx=i:false});
+    let newAdOns = [...selAdons];
+    newAdOns.map((ao, i) => {
+      return ao.id == itemId ? (AoIndx = i) : false;
+    });
     console.log(AoIndx);
-    if(AoIndx != -1){
-      newAdOns.splice(AoIndx,1);
-    }else{
+    if (AoIndx != -1) {
+      newAdOns.splice(AoIndx, 1);
+    } else {
       newAdOns.push(pi);
     }
     setSelAdons(newAdOns);
@@ -207,11 +217,11 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     ? JSON.parse(sessionStorage.getItem("merchantData"))
     : null;
   console.log(merchantData);
-   merchantData.taxPerc = merchantData.taxPerc|| merchantData.takeAwayTax;
-    
-  if(containedIndex==1){
-      merchantData.taxPerc = merchantData.dineinTax;
-    }
+  merchantData.taxPerc = merchantData.taxPerc || merchantData.takeAwayTax;
+
+  if (containedIndex == 1) {
+    merchantData.taxPerc = merchantData.dineinTax;
+  }
 
   const merchCode = merchantData ? merchantData.merchantCode : "";
   useEffect(() => {
@@ -246,11 +256,15 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     const fullName = userData ? userData.name : "";
 
     if (orderDetails) {
-      window.location.href = `${window.location.origin
-        }/billPrint?serve_url=${baseURL}&orderId=${orderDetails ? orderDetails.id : ""
-        }&merchantCode=${merchCode ? merchCode : ""}&currency=${currency.length && currency[0].abbreviation
-        }&restaurant=${fullName}&address=${userData || merchantData ? merchantData.address || userData.address : ""
-        }&cgst=${merchantData.taxPerc}&invoice_no=${invoiceNo}`;
+      window.location.href = `${
+        window.location.origin
+      }/billPrint?serve_url=${baseURL}&orderId=${
+        orderDetails ? orderDetails.id : ""
+      }&merchantCode=${merchCode ? merchCode : ""}&currency=${
+        currency.length && currency[0].abbreviation
+      }&restaurant=${fullName}&address=${
+        userData || merchantData ? merchantData.address || userData.address : ""
+      }&cgst=${merchantData.taxPerc}&invoice_no=${invoiceNo}`;
     }
   }
 
@@ -262,7 +276,7 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     address:
       userData || merchantData ? merchantData.address || userData.address : "",
     cgst: merchantData.taxPerc,
-    taxPerc:merchantData.taxPerc,
+    taxPerc: merchantData.taxPerc,
     invoice_no: invoiceNo,
   };
   useEffect(() => {
@@ -277,11 +291,15 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   //console.log(categories)
   useEffect(() => {
     axios.get(getProductByUser).then((response) => {
-      let orderableCats=[];
-      categories.map(ct=> {if(ct.isOrderableAlone || !ct.isAddOn){
-        orderableCats.push(ct.id);
-    }});
-      let orderableItems = response.data.filter(itm => orderableCats.indexOf(itm.category) != -1)
+      let orderableCats = [];
+      categories.map((ct) => {
+        if (ct.isOrderableAlone || !ct.isAddOn) {
+          orderableCats.push(ct.id);
+        }
+      });
+      let orderableItems = response.data.filter(
+        (itm) => orderableCats.indexOf(itm.category) != -1
+      );
       setTotalProducts(response.data);
       setProducts(orderableItems);
 
@@ -315,6 +333,12 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     console.log(orderItem);
 
     p.quantity = 1;
+
+    // Apply edited price if exists
+    if (editedPrices[p.id]) {
+    p.price = editedPrices[p.id];
+    }
+    
     let orders = orderItem && orderItem.length ? orderItem : [];
     orders.push(JSON.parse(JSON.stringify(p)));
     console.log("final order", orders);
@@ -322,6 +346,80 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     updateOrderDetails(orders);
     // }
   };
+
+  //Price edit during order
+  const handlePriceEdit = (item) => {
+    setEditingItem(item);
+    setNewPrice(item.price.toString());
+    setPriceEditDialog(true);
+  };
+
+  const handlePriceUpdate = () => {
+    if (newPrice && !isNaN(newPrice)) {
+      const updatedOrderItems = order.orderItems.map((orderItem) => {
+        if (orderItem === editingItem) {
+          return { ...orderItem, price: parseFloat(newPrice) };
+        }
+        return orderItem;
+      });
+
+       // Store the edited price
+      setEditedPrices({
+      ...editedPrices,
+      [editingItem.id]: parseFloat(newPrice)
+      });
+
+      setOrder({ ...order, orderItems: updatedOrderItems });
+      updateOrderDetails(updatedOrderItems);
+      setPriceEditDialog(false);
+      setNewPrice("");
+      setEditingItem(null);
+    }
+  };
+
+//Add price edit dialog
+const PriceEditDialog = () => {
+  return (
+    <Dialog 
+      open={priceEditDialog} 
+      onClose={() => setPriceEditDialog(false)}
+      maxWidth="xs"
+      fullWidth
+    >
+      <DialogTitle>{t({ id: "edit_price" })}</DialogTitle>
+      <div style={{ padding: "20px" }}>
+        <TextField
+          fullWidth
+          label={t({ id: "new_price" })}
+          type="number"
+          value={newPrice}
+          onChange={(e) => setNewPrice(e.target.value)}
+          variant="outlined"
+          style={{ marginBottom: "20px" }}
+        />
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+          <Button 
+            variant="outlined" 
+            color="error"
+            onClick={() => setPriceEditDialog(false)}
+          >
+            {t({ id: "cancel" })}
+          </Button>
+          <Button 
+            variant="contained"
+            onClick={handlePriceUpdate}
+            style={{ background: "#f7c919" }}
+          >
+            {t({ id: "update" })}
+          </Button>
+        </div>
+      </div>
+    </Dialog>
+  );
+};
+
+
+
 
   const handleProduct = (p) => {
     console.log(p);
@@ -339,7 +437,6 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
       setProCheckBox([]);
       setSelAdons([]);
       setSelectedProduct(p);
-
     } else {
       addPrductToOrder(p);
     }
@@ -373,10 +470,7 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
           merchantCode: merchCode,
         };
         axios
-          .post(
-            `${authApi}/customer/auth-and-register`,
-            { ...data }
-          )
+          .post(`${authApi}/customer/auth-and-register`, { ...data })
           .then((res) => {
             setCustId(res.data.user.id);
             console.log(res.data);
@@ -387,11 +481,12 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   };
 
   const showVarietyBtn = (variety) => {
-    if(!Object.keys(variety).length) return;
-     let selectedVarArr =Object.keys(selectedVar);
-  let selVarArr = selectedVarArr.length?selectedVarArr:
-  handleAlignment('',Object.keys(variety)[0])
-  console.log(selVarArr)
+    if (!Object.keys(variety).length) return;
+    let selectedVarArr = Object.keys(selectedVar);
+    let selVarArr = selectedVarArr.length
+      ? selectedVarArr
+      : handleAlignment("", Object.keys(variety)[0]);
+    console.log(selVarArr);
     return (
       <ToggleButtonGroup
         value={selVarArr}
@@ -421,59 +516,57 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   const showinstructionBtn = () => {
     return (
       <div>
-      <ToggleButtonGroup
-        value={cookalignment}
-        exclusive
-        aria-label="text alignment"
-        style={{ backgroundColor: "white" }}
-      >
-        {cookInst.map((key, index) => (
-          <ToggleButton
-            style={{ display: "inline-block", padding: "none !important" }}
-            value={key}
-             onClick={()=>handleCookAlignment(key)}
-            aria-label="left aligned"
-          >
-            <div style={{ display: "block", width: "100%" }}>{key}</div>
-          </ToggleButton>
-        ))}
-      </ToggleButtonGroup>
-      <div style={{padding:"10px 50px"}}>
- <TextField
-              className="notes"
-              type="text"
-              variant="outlined"
-              min={1}
-              style={{fontSize:'1.2em'}}
-              value={customInstr}
-              onChange={(e)=>setCustomInstr(e.target.value)}
-              fullWidth={true}
-              placeholder={t({ id: "add_custom_notes" })}
-            />
-      </div>
+        <ToggleButtonGroup
+          value={cookalignment}
+          exclusive
+          aria-label="text alignment"
+          style={{ backgroundColor: "white" }}
+        >
+          {cookInst.map((key, index) => (
+            <ToggleButton
+              style={{ display: "inline-block", padding: "none !important" }}
+              value={key}
+              onClick={() => handleCookAlignment(key)}
+              aria-label="left aligned"
+            >
+              <div style={{ display: "block", width: "100%" }}>{key}</div>
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <div style={{ padding: "10px 50px" }}>
+          <TextField
+            className="notes"
+            type="text"
+            variant="outlined"
+            min={1}
+            style={{ fontSize: "1.2em" }}
+            value={customInstr}
+            onChange={(e) => setCustomInstr(e.target.value)}
+            fullWidth={true}
+            placeholder={t({ id: "add_custom_notes" })}
+          />
+        </div>
       </div>
     );
   };
 
   const nextHandler = () => {
-  
     selectedProduct.sub_pro = {};
-   
-      //Set price if variety price availabe
+
+    //Set price if variety price availabe
     let varName = Object.keys(selectedVar);
     selectedProduct.price = varName.length
       ? parseFloat(variety[varName[0]])
       : selectedProduct.price;
-      selectedProduct.sub_pro.addons = [...selAdons];
-      selectedProduct.sub_pro.variety = selectedVar;
-      selectedProduct.sub_pro.cookInstructions = cookalignment;
-      if(customInstr){
-        selectedProduct.sub_pro.cookInstructions.push(customInstr);
-      }
-      addPrductToOrder(selectedProduct);
+    selectedProduct.sub_pro.addons = [...selAdons];
+    selectedProduct.sub_pro.variety = selectedVar;
+    selectedProduct.sub_pro.cookInstructions = cookalignment;
+    if (customInstr) {
+      selectedProduct.sub_pro.cookInstructions.push(customInstr);
+    }
+    addPrductToOrder(selectedProduct);
 
-      addOnOrders.map((a) => addPrductToOrder(a));
- 
+    addOnOrders.map((a) => addPrductToOrder(a));
 
     setIsOpen(false);
     setAddons([]);
@@ -487,42 +580,36 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
     let orderItems = (newOrderItem || orderItem).map((x) => {
       if (!x.quantity) {
         x.quantity = 1;
-        
       }
-    let addonsPrice =(x.sub_pro && x.sub_pro.addons
-            ? x.sub_pro.addons.reduce((acc, val) => acc + val.price, 0)
-            : 0)
-      x.totalPrice = (x.price+addonsPrice) * x.quantity;
+      let addonsPrice =
+        x.sub_pro && x.sub_pro.addons
+          ? x.sub_pro.addons.reduce((acc, val) => acc + val.price, 0)
+          : 0;
+      x.totalPrice = (x.price + addonsPrice) * x.quantity;
       return x;
     });
     const itemsCount = orderItems.reduce((a, c) => a + c.quantity, 0);
     setItemCount(itemsCount);
     const itemsPrice = orderItems.reduce((a, c) => a + c.totalPrice, 0);
-    let txPerc = merchantData.taxPerc|| merchantData.takeAwayTax;
-     let orderType="Take Away";
-    if(containedIndex==1){
+    let txPerc = merchantData.taxPerc || merchantData.takeAwayTax;
+    let orderType = "Take Away";
+    if (containedIndex == 1) {
       txPerc = merchantData.dineinTax;
-      orderType="Eat In";
+      orderType = "Eat In";
     }
-    console.log('----------',txPerc);
-    const taxPrice = 
-      txPerc
-        ? ((txPerc / 100) * itemsPrice * 100) / 100
-      : 0;
-    
+    console.log("----------", txPerc);
+    const taxPrice = txPerc ? ((txPerc / 100) * itemsPrice * 100) / 100 : 0;
+
     let totalPrice = parseFloat(itemsPrice + taxPrice).toFixed(2);
 
-    if(merchantData.isItemInclusiveTax){
-        totalPrice = parseFloat(itemsPrice).toFixed(2);
+    if (merchantData.isItemInclusiveTax) {
+      totalPrice = parseFloat(itemsPrice).toFixed(2);
     }
-
-    
 
     console.log(taxPrice);
     const setpro = [addons];
     console.log(selectedDiscountMethod);
     console.log(discValue);
-   
 
     let order = {
       number: 0,
@@ -650,71 +737,65 @@ const [showAddressDialog, setShowAddressDialog] = useState(false);
   //   setEmail("");
   //   setAddress("");
 
-  //     return <Alert severity="error">Customer not found</Alert>;   
+  //     return <Alert severity="error">Customer not found</Alert>;
   //   }
   // };
 
+  // Replace the existing handleSearchCustomer function
+  const handleSearchCustomer = () => {
+    if (!phnumber) return;
 
-// Replace the existing handleSearchCustomer function
-const handleSearchCustomer = () => {
-  if (!phnumber ) return;
-  
-  // Find all matching customers based on phone number
-  const matchingCustomers = customerData.filter(customer => 
-    customer.phone && customer.phone.includes(phnumber)
-  );
+    // Find all matching customers based on phone number
+    const matchingCustomers = customerData.filter(
+      (customer) => customer.phone && customer.phone.includes(phnumber)
+    );
 
-  setSearchResults(matchingCustomers);
-  setIsCustomerFound(matchingCustomers.length > 0);
-};
+    setSearchResults(matchingCustomers);
+    setIsCustomerFound(matchingCustomers.length > 0);
+  };
 
+  // Add this new function to handle radio selection
+  const handleCustomerSelect = (customer) => {
+    setName(customer.firstName);
+    setEmail(customer.email);
+    setPhnumber(customer.phone);
+    setCustId(customer.id);
+    setAddress(customer.address);
+    setIsCustomerFound(true);
+    // setSearchResults([]);
+  };
 
- // Add this new function to handle radio selection
-const handleCustomerSelect = (customer) => {
-  setName(customer.firstName);
-  setEmail(customer.email);
-  setPhnumber(customer.phone);
-  setCustId(customer.id);
-  setAddress(customer.address);
-  setIsCustomerFound(true);
-  // setSearchResults([]);
-};
+  const handleSaveCustomerSelection = () => {
+    if (phnumber) {
+      // Set customer details in state
+      setMoblileNo(phnumber);
+      setName(name);
+      setAddress(address);
 
+      // // Initialize or update order object
+      // const updatedOrder = {
+      //   ...(order || {}), // Create new order if none exists
+      //   customerId: custId,
+      //   customerPhone: phnumber,
+      //   customerName: name,
+      //   customerAddress: address,
+      //   orderItems: order?.orderItems || [] // Ensure orderItems exists
+      // };
 
-const handleSaveCustomerSelection = () => {
-  if (phnumber) {
-    // Set customer details in state
-    setMoblileNo(phnumber);
-    setName(name);
-    setAddress(address);
-    
-    // // Initialize or update order object
-    // const updatedOrder = {
-    //   ...(order || {}), // Create new order if none exists
-    //   customerId: custId,
-    //   customerPhone: phnumber,
-    //   customerName: name,
-    //   customerAddress: address,
-    //   orderItems: order?.orderItems || [] // Ensure orderItems exists
-    // };
-    
-    // // Update order state
-    // setOrder(updatedOrder);
-    
-    // Reset UI states
-    setOpenPhone(false);
-    setSearchResults([]);
-    setCustomerDetail(false);    
+      // // Update order state
+      // setOrder(updatedOrder);
 
-  }
-};
-
+      // Reset UI states
+      setOpenPhone(false);
+      setSearchResults([]);
+      setCustomerDetail(false);
+    }
+  };
 
   const handleAddCustomer = () => {
     if (phnumber) {
       // createNewOrder()
       setShowAddressDialog(true);
-
 
       if (existingData != {} && custId != "") {
         axios
@@ -722,7 +803,6 @@ const handleSaveCustomerSelection = () => {
             email: email,
             phone: phnumber,
             firstName: name,
-           
           })
           .then((res) => {
             console.log(res.data);
@@ -733,31 +813,28 @@ const handleSaveCustomerSelection = () => {
           email: email || `${phnumber}@menulive.in`,
           phone: phnumber,
           firstName: phnumber,
-          lastName: "",         
+          lastName: "",
           address: address,
           password: phnumber,
           isEmailVerified: false,
           isPhoneVerified: false,
           referenceDetails: "",
           merchantCode: merchCode,
-          userType: "CUSTOMER" 
+          userType: "CUSTOMER",
         };
-    
+
         axios
-          .post(
-            `${authApi}/customer/auth-and-register`,
-            data 
-          )
-          .then((res) => {      
+          .post(`${authApi}/customer/auth-and-register`, data)
+          .then((res) => {
             setCustId(res.data.user.id);
             setShowAddressDialog(false);
-            console.log(res.data);           
+            console.log(res.data);
           });
         setOpenPhone(false);
       }
     }
   };
- 
+
   const handleCancle = () => {
     setOrderItem([]);
     setOrder();
@@ -784,19 +861,16 @@ const handleSaveCustomerSelection = () => {
     setOpenPhone(false);
     setBillPrint(false);
 
-
-    
-     // Reset all customer-related states
-  setPhnumber('');
-  setName('');
-  setEmail('');
-  setAddress('');
-  setCustId('');
-  setSearchResults([]);
-  setShowSelectedData(false);
-  setIsCustomerFound(true);
+    // Reset all customer-related states
+    setPhnumber("");
+    setName("");
+    setEmail("");
+    setAddress("");
+    setCustId("");
+    setSearchResults([]);
+    setShowSelectedData(false);
+    setIsCustomerFound(true);
   };
-
 
   const createOrder = (e, isOrder, isSaveOrder) => {
     if (!order) return;
@@ -820,7 +894,8 @@ const handleSaveCustomerSelection = () => {
       if (tabupdate.length > 0) {
         axios
           .put(
-            `${baseURL}/api/tables/${tabupdate[0].id}?merchantCode=${merchantData ? merchantData.merchantCode : " "
+            `${baseURL}/api/tables/${tabupdate[0].id}?merchantCode=${
+              merchantData ? merchantData.merchantCode : " "
             }`,
             tabupdate[0]
           )
@@ -863,7 +938,8 @@ const handleSaveCustomerSelection = () => {
       const updateOrder = async () => {
         try {
           await axios.put(
-            `${baseURL}/api/orders/${ordId}?userId=${merchantData ? merchantData.merchantCode : " "
+            `${baseURL}/api/orders/${ordId}?userId=${
+              merchantData ? merchantData.merchantCode : " "
             }`,
             order
           );
@@ -880,7 +956,8 @@ const handleSaveCustomerSelection = () => {
       order.discountAmount = parseFloat(discValue);
       axios
         .post(
-          `${baseURL}/api/orders?userId=${merchantData ? merchantData.merchantCode : " "
+          `${baseURL}/api/orders?userId=${
+            merchantData ? merchantData.merchantCode : " "
           }`,
           order
         )
@@ -990,12 +1067,10 @@ const handleSaveCustomerSelection = () => {
       setSelectedDiscountMethod("");
       setCustomInstr("");
       setSelectedVar({});
-
     } else {
       alert("Please Add An Order");
     }
   };
-
 
   useEffect(() => {
     if (containedIndex === 1) {
@@ -1056,7 +1131,7 @@ const handleSaveCustomerSelection = () => {
     setSelectedCat(catId);
   };
 
-  const handleItem = () => { };
+  const handleItem = () => {};
 
   const cancleOrder = () => {
     setIsPayment(false);
@@ -1082,7 +1157,7 @@ const handleSaveCustomerSelection = () => {
     ord.payVia = mode;
     setOrder(ord);
   };
- 
+
   const closeHandler = () => {
     setIsOpen(false);
     setDialogStep(1);
@@ -1111,42 +1186,45 @@ const handleSaveCustomerSelection = () => {
       <div>
         <div className={"cat_cont"}>
           <div>
-          <img 
-                      src={"./images/cat_logo.jpeg"}
-                      className={'cat_epos_icon'}
-                     
-                    />
-          <div className={!selectedCat?"chip selected-chip":"chip"} onClick={handleAllCategory}>
-            All{" "}
-          </div>
+            <img src={"./images/cat_logo.jpeg"} className={"cat_epos_icon"} />
+            <div
+              className={!selectedCat ? "chip selected-chip" : "chip"}
+              onClick={handleAllCategory}
+            >
+              All{" "}
+            </div>
           </div>
           {cat &&
-            cat.filter(ct=> ct.isOrderableAlone || !ct.isAddOn).map((category) => {
-              let cId = category._id || category.id;
-              
-              return (
-                <div
-                  onClick={() =>
-                    categoryClickHandler(category.name, cId, category.isAddOn)
-                  }
-                >
-                       <img 
+            cat
+              .filter((ct) => ct.isOrderableAlone || !ct.isAddOn)
+              .map((category) => {
+                let cId = category._id || category.id;
+
+                return (
+                  <div
+                    onClick={() =>
+                      categoryClickHandler(category.name, cId, category.isAddOn)
+                    }
+                  >
+                    <img
                       src={`${baseURL}/` + category.image}
                       alt={category.name}
-                      className={'cat_epos_icon'}
-                      onError={(e) => e.target.src = "./images/blank.jpg"}
+                      className={"cat_epos_icon"}
+                      onError={(e) => (e.target.src = "./images/blank.jpg")}
                     />
 
-                  <div className={category.id== selectedCat?"chip selected-chip":"chip"}>
-                  
-                    {category.name}
+                    <div
+                      className={
+                        category.id == selectedCat
+                          ? "chip selected-chip"
+                          : "chip"
+                      }
+                    >
+                      {category.name}
                     </div>
-                   
-                    
-                    
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
         </div>
       </div>
     );
@@ -1171,9 +1249,11 @@ const handleSaveCustomerSelection = () => {
     setProducts(products);
     setSelectedCat("");
   };
- 
+
   const showdialogForAddons = () => {
-    let adonsCats = categories.filter(cat => selectedProduct.add_ons.indexOf(cat.id) != -1);
+    let adonsCats = categories.filter(
+      (cat) => selectedProduct.add_ons.indexOf(cat.id) != -1
+    );
     return (
       <Box className="boxdialog">
         <Dialog
@@ -1185,53 +1265,103 @@ const handleSaveCustomerSelection = () => {
           <div id="dbox">
             <h2 style={{ textAlign: "center" }}>{selectedProduct.name}</h2>
             <Box id="adionorder" style={{ margin: "10px" }}>
-              {variety && Object.keys(variety).length?<h4 style={{ textAlign: "center" }}>{"SELECT SIZE"}</h4>:""}
+              {variety && Object.keys(variety).length ? (
+                <h4 style={{ textAlign: "center" }}>{"SELECT SIZE"}</h4>
+              ) : (
+                ""
+              )}
               <div style={{ textAlign: "center", fontWeight: "bold" }}>
                 {showVarietyBtn(variety)}
               </div>
-              
-       
-              {adonsCats.length?
-                adonsCats.map((aoCat, i) => (
-                  <div
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignContent: "center",
-                      padding: "3px 15px",
-                      fontSize: "20px",
-                      flexWrap: "wrap",
-                      marginBottom:"20px"
-                    }}
-                  >
-                    <h3 style={{width:"100%",margin:"5px",textAlign:'center',color:"#fff"}}><b> {aoCat.name}</b></h3>
-                    <div className='textsmall_b' >{'(Min. '+aoCat.minAddOnAllowed+ ', Max '+aoCat.maxAddOnAllowed+')'}</div>
-                    {totalProducts.filter(aopi=> aopi.category== aoCat.id).map(pi => <div className="chip-select" style={{backgroundColor:procheckbox[i]?'#0cb600':"#c6c2c2"}}>
-                       <Checkbox
-                          id={`checkboxId-${i}`}
-                          checked={procheckbox[i]}
-                          onChange={(e) =>
-                            adAddons(e, pi.id, i,pi)
-                          }
-                        />
-                      <span> {pi.name} </span>
-                      <b style={{fontSize:'0.7em',color:'#fff'}}>
-                        {selectedCurrency} {pi.price}
-                      </b>
-                      
+
+              {adonsCats.length
+                ? adonsCats.map((aoCat, i) => (
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignContent: "center",
+                        padding: "3px 15px",
+                        fontSize: "20px",
+                        flexWrap: "wrap",
+                        marginBottom: "20px",
+                      }}
+                    >
+                      <h3
+                        style={{
+                          width: "100%",
+                          margin: "5px",
+                          textAlign: "center",
+                          color: "#fff",
+                        }}
+                      >
+                        <b> {aoCat.name}</b>
+                      </h3>
+                      <div className="textsmall_b">
+                        {"(Min. " +
+                          aoCat.minAddOnAllowed +
+                          ", Max " +
+                          aoCat.maxAddOnAllowed +
+                          ")"}
+                      </div>
+                      {totalProducts
+                        .filter((aopi) => aopi.category == aoCat.id)
+                        .map((pi) => (
+                          <div
+                            className="chip-select"
+                            style={{
+                              backgroundColor: procheckbox[i]
+                                ? "#0cb600"
+                                : "#c6c2c2",
+                            }}
+                          >
+                            <Checkbox
+                              id={`checkboxId-${i}`}
+                              checked={procheckbox[i]}
+                              onChange={(e) => adAddons(e, pi.id, i, pi)}
+                            />
+                            <span> {pi.name} </span>
+                            <b style={{ fontSize: "0.7em", color: "#fff" }}>
+                              {selectedCurrency} {pi.price}
+                            </b>
+                          </div>
+                        ))}
                     </div>
-                    )}
-
-
-                  </div>
-                ))
+                  ))
                 : ""}
 
               <h4 style={{ textAlign: "center" }}>
-                 {t({ id: "select_cook_instruction" })}
+                {t({ id: "select_cook_instruction" })}
               </h4>
-              <div style={{ textAlign: "center", fontWeight: "bold",marginBottom:"20px" }}>
+              <div
+                style={{
+                  textAlign: "center",
+                  fontWeight: "bold",
+                  marginBottom: "20px",
+                }}
+              >
                 {showinstructionBtn(cookInst)}
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  gap: "20px",
+                  alignItems: "center",
+                  marginBottom: "20px"
+                }}
+              >
+                <h3>Edit price</h3>
+                <Checkbox
+                checked={editableItems[selectedProduct.id] || false}
+                onChange={(e) => {
+                  setEditableItems({
+                    ...editableItems,
+                    [selectedProduct.id]: e.target.checked
+                  });
+                }}
+              />
               </div>
 
               <Box
@@ -1249,7 +1379,7 @@ const handleSaveCustomerSelection = () => {
                   {t({ id: "cancel" })}
                 </Button>
                 <Button variant="contained" id="btnAdd" onClick={nextHandler}>
-                 {t({ id: "Next" })}
+                  {t({ id: "Next" })}
                 </Button>
               </Box>
             </Box>
@@ -1260,16 +1390,15 @@ const handleSaveCustomerSelection = () => {
   };
   const handleClick = (index) => {
     setContainedIndex(index);
-   // updateOrderDetails();
+    // updateOrderDetails();
   };
-
 
   const handlePaymentClick = (index) => {
     setPaymentIndex(index);
   };
 
-  const handleTakeAway = () => { };
-  const handleDineIn = () => { };
+  const handleTakeAway = () => {};
+  const handleDineIn = () => {};
   const handleDelivery = () => {
     setOpenPhone(true);
   };
@@ -1295,7 +1424,7 @@ const handleSaveCustomerSelection = () => {
                     handleTakeAway();
                   }}
                 >
-                 {t({ id: "take_away" })}
+                  {t({ id: "take_away" })}
                 </Button>
                 <Button
                   variant={containedIndex === 1 ? "contained" : "outlined"}
@@ -1328,24 +1457,22 @@ const handleSaveCustomerSelection = () => {
                     handleDelivery();
                   }}
                 >
-                   {t({ id: "delivery" })}
+                  {t({ id: "delivery" })}
                 </Button>
               </ButtonGroup>
-
 
               <Dialog
                 aria-labelledby="max-width-dialog-title"
                 style={{ backgroundColor: "#fff !important" }}
                 open={openPhone}
-
                 fullWidth={true}
                 maxWidth="xs"
-              // className='Orderp'
+                // className='Orderp'
               >
-                <DialogTitle id="titorder" style={{textAlign:"center"}}>
+                <DialogTitle id="titorder" style={{ textAlign: "center" }}>
                   <b>Enter Customer Details</b>
                 </DialogTitle>
-                <h4 style={{margin:"10px"}}>Enter Mobile Number:</h4>
+                <h4 style={{ margin: "10px" }}>Enter Mobile Number:</h4>
                 <div
                   style={{
                     display: "flex",
@@ -1353,7 +1480,6 @@ const handleSaveCustomerSelection = () => {
                     margin: "5px",
                   }}
                 >
-                  
                   <input
                     type="number"
                     placeholder="Enter Mobile"
@@ -1361,77 +1487,94 @@ const handleSaveCustomerSelection = () => {
                     value={phnumber}
                     className="number_input"
                     pattern="[1-9]{1}[0-9]{9}"
-                    style={{  padding: "5px" ,marginLeft:"10px",width:"70%",fontSize:"1.2em"}}
+                    style={{
+                      padding: "5px",
+                      marginLeft: "10px",
+                      width: "70%",
+                      fontSize: "1.2em",
+                    }}
                   />
-            
-                  <button 
-                    onClick={()=>handleSearchCustomer()} 
-                    style={{margin:"10px",borderRadius:"10px",background:"#000",color:"#fff"}}>
-                       <SearchIcon/>
-                  </button>               
+
+                  <button
+                    onClick={() => handleSearchCustomer()}
+                    style={{
+                      margin: "10px",
+                      borderRadius: "10px",
+                      background: "#000",
+                      color: "#fff",
+                    }}
+                  >
+                    <SearchIcon />
+                  </button>
                 </div>
 
+                {/* Search Results Section */}
+                {searchResults.length > 0 && (
+                  <div style={{ margin: "20px" }}>
+                    <Typography variant="subtitle1">
+                      Select Existing Customer:
+                    </Typography>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "10px",
+                      }}
+                    >
+                      {searchResults.map((customer) => (
+                        <div
+                          key={customer.id}
+                          style={{ display: "flex", alignItems: "center" }}
+                        >
+                          <input
+                            type="radio"
+                            id={customer.id}
+                            name="customerSelect"
+                            onChange={() => handleCustomerSelect(customer)}
+                          />
+                          <label
+                            htmlFor={customer.id}
+                            style={{ marginLeft: "10px" }}
+                          >
+                            {customer.firstName} - {customer.phone}
+                            {customer.address && ` - ${customer.address}`}
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
+                {!isCustomerFound && phnumber && phnumber.length > 3 && (
+                  <div
+                    style={{
+                      color: "#f44336",
+                      padding: "8px 16px",
+                      marginTop: "8px",
+                      borderRadius: "4px",
+                      marginLeft: "10px",
+                      marginRight: "10px",
+                    }}
+                  >
+                    Customer not found
+                  </div>
+                )}
 
-        {/* Search Results Section */}
-    {searchResults.length > 0 && (
-      <div style={{ margin: "20px" }}>
-        <Typography variant="subtitle1">Select Existing Customer:</Typography>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {searchResults.map((customer) => (
-            <div key={customer.id} style={{ display: "flex", alignItems: "center" }}>
-              <input
-                type="radio"
-                id={customer.id}
-                name="customerSelect"
-                onChange={() => handleCustomerSelect(customer)}
-                
-              />
-              <label htmlFor={customer.id} style={{ marginLeft: "10px" }}>
-                {customer.firstName} - {customer.phone}
-                {customer.address && ` - ${customer.address}`}
-              </label>
-            </div>
-          ))}
-
-        </div>
-       
-      </div>
-    )}
- 
-
-  {  !isCustomerFound && phnumber && phnumber.length>3 && (
-  <div style={{ 
-    color: '#f44336',
-    padding: '8px 16px',
-    marginTop: '8px',
-    borderRadius: '4px',
-    marginLeft: '10px',
-    marginRight: '10px'
-  }}>
-    Customer not found
-  </div>
-)}
-
-
-
-                {phnumber && phnumber.length>3 && !isCustomerFound && ( 
-                   
-                   <div style={{ padding: "20px" }}>
-                    <h3>Add Delievery Address:</h3>
-                   <TextField
-                     fullWidth
-                     multiline
-                     rows={3}
-                     label="Delivery Address"
-                     value={address}
-                     onChange={(e) => setAddress(e.target.value)}
-                     variant="outlined"
-                     style={{ marginBottom: "20px" }}
-                   />
-                   
-                 </div>
-                  )}
+                {phnumber && phnumber.length > 3 && !isCustomerFound && (
+                  <div style={{ padding: "20px" }}>
+                    <h3>Add Delievery Address :</h3>
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={3}
+                      label="Delivery Address"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      variant="outlined"
+                      style={{ marginBottom: "20px" }}
+                    />
+                  </div>
+                )}
                 <div
                   style={{
                     display: "flex",
@@ -1447,33 +1590,30 @@ const handleSaveCustomerSelection = () => {
                     Close
                   </Button>
 
-
-                  { phnumber && phnumber.length>3 && !isCustomerFound && ( 
-                   <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleAddCustomer}
-                  >
-                    ADD NEW
-                  </Button>
-
+                  {phnumber && phnumber.length > 3 && !isCustomerFound && (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleAddCustomer}
+                    >
+                      ADD NEW
+                    </Button>
                   )}
 
-
-            { phnumber&& phnumber.length>3 && isCustomerFound &&(
+                  {phnumber && phnumber.length > 3 && isCustomerFound && (
                     <Button
-        variant="contained"
-        onClick={handleSaveCustomerSelection}
-        style={{ width:"50px",textAlign:"center",background: "#f7c919",padding:" 5px 50px" }}
-        
-      >
-        SELECT
-      </Button>
-        )}
-
-                 
-
-                 
+                      variant="contained"
+                      onClick={handleSaveCustomerSelection}
+                      style={{
+                        width: "50px",
+                        textAlign: "center",
+                        background: "#f7c919",
+                        padding: " 5px 50px",
+                      }}
+                    >
+                      SELECT
+                    </Button>
+                  )}
                 </div>
               </Dialog>
 
@@ -1505,9 +1645,7 @@ const handleSaveCustomerSelection = () => {
     </div>
   </div>
 </Dialog> */}
-
             </div>
-
 
             <div>
               <ArrowBackIcon onClick={handleBack} id="back" />
@@ -1530,140 +1668,171 @@ const handleSaveCustomerSelection = () => {
                 <tbody>
                   {order
                     ? order.orderItems.map((item, indx) => {
-                      const subProArray = item.sub_pro;
-                      console.log(subProArray);
-                      const subProNames =
-                        subProArray && subProArray.addons
-                          ? subProArray.addons.map((subPro) => subPro.name)
-                          : [];
-                      const subVariety = subProArray
-                        ? subProArray.variety
-                        : "";
-                      console.log(order);
-                      console.log(subVariety);
-                      return (
-                        <>
-                          <tr>
-                            <td>
-                              {" "}
-                              <b>{item.name}</b> <br />{" "}
-                              {subProNames.length > 0 ? (
-                                <Chip
-                                  label={subProNames.join(",").toUpperCase()}
-                                  color="primary"
-                                  style={{
-                                    marginLeft: "10px",
-                                    fontSize: "10px",
-                                    fontWeight: "bold",
-                                  }}
-                                />
-                              ) : (
-                                subProNames
-                              )}{" "}
-                              {subProArray&&subProArray.cookInstructions && subProArray.cookInstructions.length ? (
-                                <Chip
-                                  label={subProArray.cookInstructions.join(',').toUpperCase()}
-                                  color="primary"
-                                  style={{
-                                    marginLeft: "10px",
-                                    fontSize: "8px",
-                                    fontWeight: "bold",
-                                  }}
-                                />
-                              ) : (
-                                ""
-                              )}
-                              {subVariety ? (
-                                <Chip
-                                  label={Object.keys(subVariety).join(',').toUpperCase()}
-                                  color="primary"
-                                  style={{
-                                    marginLeft: "10px",
-                                    fontSize: "10px",
-                                    fontWeight: "bold",
-                                  }}
-                                />
-                              ) : (
-                                ""
-                              )}
-                            </td>
-                            <td>
-                              {selectedCurrency}
-                              {item.price +
-                                (subProArray && subProArray.addons
-                                  ? subProArray.addons.reduce(
-                                    (acc, val) => acc + val.price,
-                                    0
-                                  )
-                                  : 0)}
-                            </td>
-                            <td>
-                              <div
-                                style={{
-                                  display: "flex",
-                                  justifyContent: "space-between",
-                                  alignItems: "center",
-                                }}
-                              >
-                                <button
-                                  className="add_btn"
-                                  onClick={() => handleRemove(indx)}
-                                >
-                                  <RemoveIcon />
-                                </button>
-                                <span style={{ margin: "0px 8px" }}>
-                                  {item.quantity}
-                                </span>
-                                <button
-                                  className="add_btn"
-                                  onClick={() => handleAdd(indx)}
-                                >
-                                  <AddIcon />
-                                </button>
-                              </div>
-                            </td>
-                            <td>
-                              {selectedCurrency}
-                              {item.quantity *
-                                (item.price +
+                        const subProArray = item.sub_pro;
+                        console.log(subProArray);
+                        const subProNames =
+                          subProArray && subProArray.addons
+                            ? subProArray.addons.map((subPro) => subPro.name)
+                            : [];
+                        const subVariety = subProArray
+                          ? subProArray.variety
+                          : "";
+                        console.log(order);
+                        console.log(subVariety);
+                        return (
+                          <>
+                            <tr>
+                              <td>
+                                {" "}
+                                <b>{item.name}</b> <br />{" "}
+                                {subProNames.length > 0 ? (
+                                  <Chip
+                                    label={subProNames.join(",").toUpperCase()}
+                                    color="primary"
+                                    style={{
+                                      marginLeft: "10px",
+                                      fontSize: "10px",
+                                      fontWeight: "bold",
+                                    }}
+                                  />
+                                ) : (
+                                  subProNames
+                                )}{" "}
+                                {subProArray &&
+                                subProArray.cookInstructions &&
+                                subProArray.cookInstructions.length ? (
+                                  <Chip
+                                    label={subProArray.cookInstructions
+                                      .join(",")
+                                      .toUpperCase()}
+                                    color="primary"
+                                    style={{
+                                      marginLeft: "10px",
+                                      fontSize: "8px",
+                                      fontWeight: "bold",
+                                    }}
+                                  />
+                                ) : (
+                                  ""
+                                )}
+                                {subVariety ? (
+                                  <Chip
+                                    label={Object.keys(subVariety)
+                                      .join(",")
+                                      .toUpperCase()}
+                                    color="primary"
+                                    style={{
+                                      marginLeft: "10px",
+                                      fontSize: "10px",
+                                      fontWeight: "bold",
+                                    }}
+                                  />
+                                ) : (
+                                  ""
+                                )}
+                              </td>
+                              <td>
+                                {selectedCurrency}
+                                {item.price +
                                   (subProArray && subProArray.addons
                                     ? subProArray.addons.reduce(
-                                      (acc, val) => acc + val.price,
-                                      0
-                                    )
-                                    : 0))}
-                            </td>
-                            {false && (
-                              <td>
-                                <IconButton
-                                  aria-label="delete"
-                                  size="small"
-                                  color="error"
-                                  onClick={() => deleteItem(item._id)}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
+                                        (acc, val) => acc + val.price,
+                                        0
+                                      )
+                                    : 0)}
+
+
+
+
+                                {editableItems[item.id] && (
+                                  <button 
+                                  onClick={
+                                    () => handlePriceEdit(item)}
+                                  style={{background:"none", border:"none", outline:"none"}}
+                                  >
+                                    <EditIcon
+                                      style={{
+                                        fontSize: "18px",
+                                        marginLeft: "3px",
+                                        color:"white"
+                                    
+                                      }}
+                                    />
+                                  </button>
+                                )}
+                               
                               </td>
-                            )}
-                          </tr>
-                        </>
-                      );
-                    })
+
+
+                              <td>
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                  }}
+                                >
+                                  <button
+                                    className="add_btn"
+                                    onClick={() => handleRemove(indx)}
+                                  >
+                                    <RemoveIcon />
+                                  </button>
+                                  <span style={{ margin: "0px 8px" }}>
+                                    {item.quantity}
+                                  </span>
+                                  <button
+                                    className="add_btn"
+                                    onClick={() => handleAdd(indx)}
+                                  >
+                                    <AddIcon />
+                                  </button>
+                                </div>
+                              </td>
+                              <td>
+                                {selectedCurrency}
+                                {item.quantity *
+                                  (item.price +
+                                    (subProArray && subProArray.addons
+                                      ? subProArray.addons.reduce(
+                                          (acc, val) => acc + val.price,
+                                          0
+                                        )
+                                      : 0))}
+                              </td>
+                              {false && (
+                                <td>
+                                  <IconButton
+                                    aria-label="delete"
+                                    size="small"
+                                    color="error"
+                                    onClick={() => deleteItem(item._id)}
+                                  >
+                                    <DeleteIcon />
+                                  </IconButton>
+                                </td>
+                              )}
+                            </tr>
+                          </>
+                        );
+                      })
                     : ""}
 
                   <tr>
                     <td colSpan="3" align="left" style={{ color: "#81ed40" }}>
-                    {t({ id: "sub_total" })}
+                      {t({ id: "sub_total" })}
                     </td>
                     <td>
                       <b>
-                        {order ? (order.totalPrice - order.taxPrice).toFixed(2) : ""}
+                        {order
+                          ? (order.totalPrice - order.taxPrice).toFixed(2)
+                          : ""}
                       </b>
                     </td>
                   </tr>
                   <tr>
                     <td colSpan="3" style={{ color: "#81ed40" }} align="left">
-                    {t({ id: "tax" })}
+                      {t({ id: "tax" })}
                     </td>
                     <td>
                       {selectedCurrency}{" "}
@@ -1678,7 +1847,7 @@ const handleSaveCustomerSelection = () => {
                     }
                   >
                     <td style={{ color: "#aa3c06" }} colSpan="3" align="left">
-                    {t({ id: "discount" })}
+                      {t({ id: "discount" })}
                     </td>
                     <td>
                       {"- "}{" "}
@@ -1699,8 +1868,8 @@ const handleSaveCustomerSelection = () => {
                         {price || percent
                           ? price || percent
                           : order
-                            ? order.totalPrice
-                            : ""}
+                          ? order.totalPrice
+                          : ""}
                       </b>
                     </td>
                   </tr>
@@ -1794,9 +1963,12 @@ const handleSaveCustomerSelection = () => {
             }}
           >
             <div>
-              
-              <PaymentOptions handlePaymentClick={handlePaymentClick} handlePayMode={handlePayMode} paymentIndex={paymentIndex} order={order}/>
-
+              <PaymentOptions
+                handlePaymentClick={handlePaymentClick}
+                handlePayMode={handlePayMode}
+                paymentIndex={paymentIndex}
+                order={order}
+              />
             </div>
             <div
               style={{
@@ -1813,7 +1985,7 @@ const handleSaveCustomerSelection = () => {
                 className="btn-border"
                 onClick={handleResume}
               >
-                   {t({ id: "resume" })}
+                {t({ id: "resume" })}
               </Button>
               <Button
                 variant="outlined"
@@ -1829,7 +2001,7 @@ const handleSaveCustomerSelection = () => {
                 id="btn"
                 onClick={createOrder}
               >
-                 {t({ id: "finish_order" })}
+                {t({ id: "finish_order" })}
               </Button>
             </div>
           </div>
@@ -1860,13 +2032,15 @@ const handleSaveCustomerSelection = () => {
                       image={`${baseURL}/` + p.image}
                       className="img-product"
                     />
-                    
+
                     <CardContent className="cardFooter">
                       <Box className="foot">
                         <Typography variant="h6" component="p" className="txtf">
                           {p.name}
                         </Typography>
-                        <b style={{fontSize:"0.7em"}}>{selectedCurrency} {p.price}</b>
+                        <b style={{ fontSize: "0.7em" }}>
+                          {selectedCurrency} {p.price}
+                        </b>
                       </Box>
                     </CardContent>
                   </CardActionArea>
@@ -1901,8 +2075,9 @@ const handleSaveCustomerSelection = () => {
           {`
                 @media (orientation: portrait) {
                     .orderlist {
-                        display: ${showOrders ? "block !important" : "none !important"
-            };
+                        display: ${
+                          showOrders ? "block !important" : "none !important"
+                        };
                     }
                 }
                 `}
@@ -1951,11 +2126,11 @@ const handleSaveCustomerSelection = () => {
             style={
               containedIndex === 1
                 ? {
-                  display: "inline-block",
-                  display: "flex",
-                  alignItems: "center",
-                  width: "100%",
-                }
+                    display: "inline-block",
+                    display: "flex",
+                    alignItems: "center",
+                    width: "100%",
+                  }
                 : { display: "none", marginLeft: "10px" }
             }
           >
@@ -2004,56 +2179,62 @@ const handleSaveCustomerSelection = () => {
       </span>
       {selectedProduct && showdialogForAddons()}
 
-      <Dialog open={customerDetail} style={{zIndex:2132321, width: "50% !important" }}>
-        
+      <Dialog
+        open={customerDetail}
+        style={{ zIndex: 2132321, width: "50% !important" }}
+      >
         <div>
-        
-        {customerDetail && <div style={{padding:'20px'}}>
-        <header><h3>{'Customer Details'}</h3></header>
-          <input
-            type="text"
-            placeholder="Customer"
-            onChange={(e) => e.target.value>3 && setMoblileNo(e.target.value)}
-            value={mobileNo || name}
-            style={{
-              display: "block",
-              backgroundColor: "white",
-              border: "1px solid #ccc",
-              padding: "5px",
-              borderRadius: "20px",
-            }}
-          />
-           <footer style={{ margin: "10px", textAlign: "end" }}>
-          <Button
-            variant="contained"
-            className={"btnDialog-Fill"}
-            onClick={() => {
-              cancelCustomer();
-            }}
-          >
-            {"Ok"}
-          </Button>
-        </footer>
-          </div>
-        }
+          {customerDetail && (
+            <div style={{ padding: "20px" }}>
+              <header>
+                <h3>{"Customer Details"}</h3>
+              </header>
+              <input
+                type="text"
+                placeholder="Customer"
+                onChange={(e) =>
+                  e.target.value > 3 && setMoblileNo(e.target.value)
+                }
+                value={mobileNo || name}
+                style={{
+                  display: "block",
+                  backgroundColor: "white",
+                  border: "1px solid #ccc",
+                  padding: "5px",
+                  borderRadius: "20px",
+                }}
+              />
+              <footer style={{ margin: "10px", textAlign: "end" }}>
+                <Button
+                  variant="contained"
+                  className={"btnDialog-Fill"}
+                  onClick={() => {
+                    cancelCustomer();
+                  }}
+                >
+                  {"Ok"}
+                </Button>
+              </footer>
+            </div>
+          )}
         </div>
-       
       </Dialog>
 
       <Dialog open={tableDetail} style={{ width: "50% !important" }}>
         <div style={{ textAlign: "center", padding: "10px" }}>
-        <h3>Select Table</h3>
+          <h3>Select Table</h3>
           {tableData.length ? (
-            
             <ul id="ul-list">
-             
               {tableData.map((tab) => (
-                <li key={tab.number} onClick={()=>handleTableChange(tab.number)}>
+                <li
+                  key={tab.number}
+                  onClick={() => handleTableChange(tab.number)}
+                >
                   <input
                     type="radio"
                     name="tableSelection"
                     value={tab.number}
-                    style={{fontSize:"1.5em"}}
+                    style={{ fontSize: "1.5em" }}
                   />
                   {`Table Number ${tab.number}`}
                 </li>
@@ -2064,11 +2245,10 @@ const handleSaveCustomerSelection = () => {
           )}
         </div>
 
-        <div style={{ margin: "10px", textAlign: "end"}}>
-        <Button
+        <div style={{ margin: "10px", textAlign: "end" }}>
+          <Button
             variant="outlined"
             color="error"
-            
             onClick={() => {
               cancelTable();
             }}
@@ -2077,9 +2257,8 @@ const handleSaveCustomerSelection = () => {
           </Button>
           <Button
             variant="contained"
-             style={{ background: "#f7c919" ,marginLeft:"80px"}}
+            style={{ background: "#f7c919", marginLeft: "80px" }}
             onClick={() => {
-             
               cancelTable();
             }}
           >
@@ -2159,43 +2338,43 @@ const handleSaveCustomerSelection = () => {
           </h4>
           {orderHold && orderHoldData && orderHoldData.length
             ? orderHoldData.map((ordHold) => (
-              <div className="pro_item" key={ordHold.userId}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-around",
-                    fontSize: "20px",
-                  }}
-                >
-                  <span>{ordHold.customerId}</span>
-                  <span>
-                    {selectedCurrency}
-                    {ordHold.discountType === "price"
-                      ? ordHold.totalPrice - ordHold.discountAmount
-                      : ordHold.totalPrice -
-                      (ordHold.totalPrice * ordHold.discountAmount) / 100}
-                  </span>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    onClick={() => handleCancelord(ordHold.customerId)}
+                <div className="pro_item" key={ordHold.userId}>
+                  <div
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-around",
+                      fontSize: "20px",
+                    }}
                   >
-                    X
-                  </Button>
-                  <Button
-                    variant="contained"
-                    onClick={() =>
-                      handlepostResume(ordHold.customerId, ordHold.number)
-                    }
-                  >
-                    {t({ id: "resume" })}
-                  </Button>
+                    <span>{ordHold.customerId}</span>
+                    <span>
+                      {selectedCurrency}
+                      {ordHold.discountType === "price"
+                        ? ordHold.totalPrice - ordHold.discountAmount
+                        : ordHold.totalPrice -
+                          (ordHold.totalPrice * ordHold.discountAmount) / 100}
+                    </span>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      onClick={() => handleCancelord(ordHold.customerId)}
+                    >
+                      X
+                    </Button>
+                    <Button
+                      variant="contained"
+                      onClick={() =>
+                        handlepostResume(ordHold.customerId, ordHold.number)
+                      }
+                    >
+                      {t({ id: "resume" })}
+                    </Button>
 
-                  <br />
+                    <br />
+                  </div>
+                  <span style={{ fontSize: "small" }}>{ordHold.timestamp}</span>
                 </div>
-                <span style={{ fontSize: "small" }}>{ordHold.timestamp}</span>
-              </div>
-            ))
+              ))
             : ""}
         </div>
       </Dialog>
@@ -2206,6 +2385,7 @@ const handleSaveCustomerSelection = () => {
         onClose={() => setSnackbarOpen(false)}
         message="Order Added Successfully!"
       />
+      {PriceEditDialog()}
     </div>
   );
 };
